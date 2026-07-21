@@ -23,21 +23,20 @@
       const allowed = [
         'xrzzky-chatroom.vercel.app',
         'xrezzky-chatroom.vercel.app',
-        'xrezzky-chatroom-eight.vercel.app/',
-        'chat.xrezzkybeta.my.id',
-        'rezzky.github.io',
+        'rezzkystoreidn.github.io',
+        'hatroom-eight.vercel.app',
         'localhost',
         '127.0.0.1'
       ];
       const host = window.location.hostname;
-      if(!allowed.some(d => host === d || host.endsWith('.'+d))){
-        document.documentElement.innerHTML = `
-          <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;background:#050e1f;color:#f1f5f9;font-family:sans-serif;text-align:center;padding:20px;">
-            <div style="font-size:40px;margin-bottom:16px;">🔒</div>
-            <div style="font-size:20px;font-weight:700;margin-bottom:8px;">Akses Tidak Diizinkan</div>
-            <div style="font-size:14px;color:#64748b;">Aplikasi ini tidak dapat dijalankan dari domain ini.</div>
-          </div>`;
-        throw new Error('Unauthorized domain');
+      const ok = allowed.some(d => host === d || host.endsWith('.'+d));
+      if(!ok){
+        document.open();
+        document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>403</title></head><body style="margin:0;background:#050e1f;display:flex;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;color:#f1f5f9;text-align:center;"><div><div style="font-size:48px;margin-bottom:16px;">🔒</div><div style="font-size:22px;font-weight:700;">403 Forbidden</div><div style="font-size:13px;color:#64748b;margin-top:8px;">Akses tidak diizinkan dari domain ini.</div></div></body></html>');
+        document.close();
+        // Stop semua JS berikutnya
+        window.stop && window.stop();
+        throw new Error('403');
       }
     })();
   </script>
