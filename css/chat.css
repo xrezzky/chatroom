@@ -1,0 +1,132 @@
+/* XREZZKY Chat — chat.css */
+/* MODALS */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;display:none;align-items:flex-end;justify-content:center}
+.modal-overlay.open{display:flex}
+.bottom-sheet{width:100%;max-width:480px;max-height:85dvh;background:var(--bg2);border-radius:24px 24px 0 0;border:1px solid var(--border);overflow:hidden;display:flex;flex-direction:column;animation:slideUp .28s cubic-bezier(.4,0,.2,1)}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.sheet-handle{width:36px;height:4px;background:var(--surface2);border-radius:99px;margin:12px auto 0}
+.sheet-title{padding:16px 20px 12px;font-size:17px;font-weight:800;border-bottom:1px solid var(--border)}
+.sheet-body{flex:1;overflow-y:auto;padding:16px 20px 32px}
+.user-search-field{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border2);border-radius:14px;padding:12px 14px;margin-bottom:16px}
+.user-search-field input{flex:1;background:none;border:none;outline:none;color:var(--text);font-size:14px;font-family:inherit}
+.user-search-field input::placeholder{color:var(--text3)}
+.user-result{display:flex;align-items:center;gap:12px;padding:12px;border-radius:14px;cursor:pointer;transition:.15s;border:1px solid transparent}
+.user-result:hover{background:var(--surface);border-color:var(--border)}
+.user-result img{width:44px;height:44px;border-radius:50%;border:2px solid var(--border2)}
+.user-result-name{font-size:14px;font-weight:700}
+.user-result-email{font-size:11px;color:var(--text3);margin-top:1px}
+.chat-btn{margin-left:auto;background:rgba(59,130,246,0.15);color:var(--accent);border:1px solid rgba(59,130,246,0.3);border-radius:10px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;transition:.15s;white-space:nowrap}
+.chat-btn:hover{background:rgba(59,130,246,0.25)}
+
+/* CTX MENU */
+#ctx-menu{position:fixed;z-index:300;background:var(--surface2);border:1px solid var(--border2);border-radius:16px;padding:10px 12px;box-shadow:0 16px 48px rgba(0,0,0,0.5);display:none}
+.ctx-reactions{display:flex;gap:4px;margin-bottom:8px}
+.ctx-react-btn{font-size:22px;padding:6px;border-radius:10px;cursor:pointer;transition:.1s}
+.ctx-react-btn:hover{background:var(--surface);transform:scale(1.2)}
+.ctx-actions{display:flex;flex-direction:column;gap:2px}
+.ctx-action{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:600;transition:.15s}
+.ctx-action:hover{background:var(--surface)}.ctx-action.danger{color:var(--red)}
+.spinner{width:20px;height:20px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .6s linear infinite;display:inline-block}
+@keyframes spin{to{transform:rotate(360deg)}}
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--surface2);border:1px solid var(--border2);color:var(--text);padding:10px 20px;border-radius:12px;font-size:13px;font-weight:600;z-index:500;opacity:0;transition:.25s;pointer-events:none;white-space:nowrap;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+#toast.show{opacity:1}
+/* ── ROLE BADGES ── */
+.role-badge{display:inline-flex;align-items:center;gap:4px;font-size:9px;font-weight:800;padding:2px 7px;border-radius:99px;letter-spacing:.3px;text-transform:uppercase}
+.role-badge.owner{background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff}
+.role-badge.admin{background:rgba(59,130,246,.2);color:#60a5fa;border:1px solid rgba(59,130,246,.3)}
+
+/* ── REQUEST BANNER (chat pending) ── */
+#request-banner{
+  background:rgba(245,158,11,.1);border-bottom:1px solid rgba(245,158,11,.25);
+  padding:10px 16px;display:none;flex-shrink:0;
+  flex-direction:column;gap:6px;
+}
+.req-banner-title{font-size:12px;font-weight:700;color:#fbbf24}
+.req-banner-sub{font-size:11px;color:var(--text3);line-height:1.5}
+.req-banner-actions{display:flex;gap:8px;margin-top:2px}
+.req-btn{padding:6px 14px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;border:none;font-family:inherit;transition:.15s}
+.req-btn.accept{background:var(--green);color:#fff}
+.req-btn.accept:hover{background:#16a34a}
+.req-btn.decline{background:rgba(239,68,68,.15);color:var(--red);border:1px solid rgba(239,68,68,.25)}
+.req-btn.decline:hover{background:rgba(239,68,68,.25)}
+
+/* ── BLOCKED BANNER ── */
+#blocked-banner{
+  background:rgba(239,68,68,.08);border-top:1px solid rgba(239,68,68,.2);
+  padding:12px 16px;display:none;flex-shrink:0;
+  align-items:center;justify-content:center;gap:8px;
+  font-size:12px;color:#fca5a5;font-weight:600;
+}
+
+/* ── CHAT LOCKED (hanya 1 pesan) ── */
+#chat-locked-bar{
+  background:rgba(245,158,11,.08);border-top:1px solid rgba(245,158,11,.2);
+  padding:10px 16px;display:none;flex-shrink:0;
+  align-items:center;justify-content:center;
+  font-size:12px;color:#fbbf24;font-weight:600;gap:6px;
+}
+
+/* ── REPORT MODAL ── */
+.report-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:500;display:none;align-items:flex-end;justify-content:center}
+.report-overlay.open{display:flex}
+.report-sheet{width:100%;max-width:480px;background:var(--bg2);border-radius:24px 24px 0 0;border:1px solid var(--border2);padding:0 0 40px;animation:slideUp .28s cubic-bezier(.4,0,.2,1)}
+.report-handle{width:36px;height:4px;background:var(--surface2);border-radius:99px;margin:14px auto 0}
+.report-title{padding:16px 20px 12px;font-size:17px;font-weight:800;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
+.report-body{padding:16px 20px}
+.report-reason-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.report-reason-btn{
+  padding:10px 12px;border-radius:12px;font-size:12px;font-weight:700;
+  cursor:pointer;border:1.5px solid var(--border2);background:var(--surface);
+  color:var(--text2);transition:.15s;text-align:left;font-family:inherit;
+}
+.report-reason-btn.selected{border-color:var(--accent);background:rgba(59,130,246,.1);color:var(--accent)}
+.report-detail{
+  width:100%;background:var(--bg3);border:1px solid var(--border2);
+  border-radius:12px;padding:10px 14px;color:var(--text);
+  font-size:13px;font-family:inherit;resize:none;outline:none;
+  margin-bottom:14px;
+}
+.report-detail:focus{border-color:var(--accent)}
+.report-submit{
+  width:100%;padding:14px;border-radius:14px;background:var(--red);color:#fff;
+  font-size:14px;font-weight:800;border:none;cursor:pointer;font-family:inherit;
+  transition:.15s;
+}
+.report-submit:hover{background:#dc2626}
+.report-submit:disabled{opacity:.5;pointer-events:none}
+
+/* ── ADMIN BADGE di convo list ── */
+.convo-item .admin-eye{
+  font-size:10px;color:var(--accent);margin-left:4px;
+}
+.profile-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:400;display:none;align-items:flex-end;justify-content:center}
+.profile-modal-overlay.open{display:flex}
+.profile-modal{width:100%;max-width:480px;background:var(--bg2);border-radius:28px 28px 0 0;border:1px solid var(--border2);padding:0 0 40px;animation:slideUp .28s cubic-bezier(.4,0,.2,1)}
+.profile-modal-handle{width:36px;height:4px;background:var(--surface2);border-radius:99px;margin:14px auto 0}
+.profile-modal-header{display:flex;flex-direction:column;align-items:center;padding:20px 24px 16px;gap:6px;border-bottom:1px solid var(--border)}
+.pm-avatar-wrap{position:relative;width:84px;height:84px}
+.pm-avatar-wrap img{width:84px;height:84px;border-radius:50%;border:3px solid var(--accent);box-shadow:0 0 24px rgba(59,130,246,0.35);object-fit:cover}
+.pm-online-dot{position:absolute;bottom:3px;right:3px;width:14px;height:14px;background:var(--green);border-radius:50%;border:2px solid var(--bg2)}
+.pm-name{font-size:20px;font-weight:900;margin-top:4px}
+.pm-bio{font-size:13px;color:var(--text2);text-align:center;line-height:1.5;max-width:280px}
+.pm-status-badge{font-size:11px;font-weight:700;padding:3px 12px;border-radius:99px}
+.pm-status-badge.online{background:rgba(34,197,94,.15);color:var(--green)}
+.pm-status-badge.offline{background:var(--surface2);color:var(--text3)}
+.pm-stats{display:flex;justify-content:center;gap:36px;padding:16px 24px;border-bottom:1px solid var(--border)}
+.pm-stat{text-align:center}
+.pm-stat strong{display:block;font-size:20px;font-weight:900}
+.pm-stat span{font-size:11px;color:var(--text3)}
+.pm-actions{display:flex;gap:10px;padding:16px 20px 0}
+.pm-btn{flex:1;padding:14px;border-radius:14px;font-size:13px;font-weight:700;cursor:pointer;border:none;font-family:inherit;transition:.15s;display:flex;align-items:center;justify-content:center;gap:7px}
+.pm-btn.primary{background:var(--accent);color:#fff;box-shadow:0 4px 14px rgba(59,130,246,.35)}
+.pm-btn.primary:hover{background:var(--accent2)}
+.pm-btn.secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border2)}
+.pm-btn.secondary:hover{background:var(--surface)}
+.pm-btn.danger{background:rgba(239,68,68,.1);color:var(--red);border:1px solid rgba(239,68,68,.25)}
+.pm-btn.danger:hover{background:rgba(239,68,68,.2)}
+#lightbox{position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:999;display:none;align-items:center;justify-content:center;flex-direction:column;gap:14px}
+#lightbox.open{display:flex}
+#lightbox img,#lightbox video{max-width:95vw;max-height:82dvh;border-radius:12px;object-fit:contain}
+.lightbox-actions{display:flex;gap:10px}
+.lightbox-btn{background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);color:#fff;padding:8px 18px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px;transition:.15s}
+.lightbox-btn:hover{background:rgba(255,255,255,0.22)}

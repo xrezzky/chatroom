@@ -1,0 +1,51 @@
+/* XREZZKY Chat — layout.css */
+/* SPLASH SCREEN */
+#screen-splash{
+  align-items:center;justify-content:center;
+  background:var(--bg);
+  position:fixed;inset:0;z-index:9999;
+  flex-direction:column;gap:16px;
+}
+#screen-splash .splash-logo{
+  width:72px;height:72px;border-radius:24px;background:var(--accent);
+  display:flex;align-items:center;justify-content:center;
+  font-size:32px;box-shadow:0 12px 40px rgba(59,130,246,0.5);
+  animation:splashPulse 1.5s ease-in-out infinite;
+}
+@keyframes splashPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+#screen-splash h1{font-size:24px;font-weight:900;letter-spacing:-0.5px}
+#screen-splash h1 span{color:var(--accent)}
+#screen-splash p{font-size:12px;color:var(--text3)}
+
+/* MAIN APP */
+#screen-app{flex-direction:row;overflow:hidden}
+
+/* REALTIME CLOCK */
+#sidebar-clock{font-size:10px;color:var(--text3);font-weight:600;letter-spacing:.3px;padding:4px 0 0;}
+
+/* SIDEBAR */
+#sidebar{width:100%;max-width:380px;flex-shrink:0;display:flex;flex-direction:column;background:var(--bg2);border-right:1px solid var(--border);height:100dvh;position:relative}
+@media(max-width:768px){#sidebar{max-width:100%}#sidebar.hidden-mobile{display:none}#chatroom{display:none}#chatroom.show-mobile{display:flex}}
+@media(min-width:769px){#chatroom{display:flex!important}}
+
+.sidebar-header{padding:calc(var(--safe-top) + 14px) 18px 0;flex-shrink:0}
+.sidebar-top-row{display:flex;align-items:center;justify-content:space-between;padding-bottom:12px;border-bottom:1px solid var(--border)}
+.sidebar-logo{display:flex;align-items:center;gap:10px}
+.sidebar-logo-dot{width:36px;height:36px;border-radius:12px;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:0 4px 12px rgba(59,130,246,0.4);overflow:hidden;cursor:pointer}
+.sidebar-logo-dot img{width:100%;height:100%;object-fit:cover;border-radius:12px}
+.sidebar-logo h2{font-size:17px;font-weight:900;letter-spacing:-0.3px}
+.sidebar-actions{display:flex;gap:8px}
+.icon-btn{width:36px;height:36px;border-radius:10px;background:var(--surface);border:1px solid var(--border);color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;transition:.15s}
+.icon-btn:hover{background:var(--surface2);color:var(--text)}
+
+/* SIDEBAR TABS */
+.sidebar-tabs{display:flex;padding:10px 16px;gap:4px;flex-shrink:0}
+.sidebar-tab{flex:1;padding:8px;border-radius:10px;font-size:12px;font-weight:700;color:var(--text3);cursor:pointer;border:none;background:transparent;transition:.15s;text-align:center;font-family:inherit;position:relative}
+.sidebar-tab.active{background:rgba(59,130,246,0.15);color:var(--accent)}
+.tab-badge{position:absolute;top:-4px;right:-4px;background:var(--red);color:#fff;font-size:9px;font-weight:800;border-radius:99px;min-width:16px;height:16px;display:flex;align-items:center;justify-content:center;padding:0 4px;border:2px solid var(--bg2)}
+
+.search-wrap{padding:0 16px 10px;flex-shrink:0}
+.search-box{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:10px 14px}
+.search-box i{color:var(--text3);font-size:13px}
+.search-box input{background:none;border:none;outline:none;color:var(--text);font-size:13px;font-family:inherit;flex:1}
+.search-box input::placeholder{color:var(--text3)}

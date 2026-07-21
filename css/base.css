@@ -1,0 +1,21 @@
+/* XREZZKY Chat — base.css */
+
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0f1e;--bg2:#0e1629;--bg3:#111827;
+  --surface:#151f35;--surface2:#1a2540;
+  --border:rgba(255,255,255,0.06);--border2:rgba(255,255,255,0.1);
+  --accent:#3b82f6;--accent2:#2563eb;
+  --green:#22c55e;--red:#ef4444;--yellow:#f59e0b;
+  --text:#f1f5f9;--text2:#94a3b8;--text3:#475569;
+  --bubble-me:linear-gradient(135deg,#2563eb,#1d4ed8);
+  --safe-top:env(safe-area-inset-top,0px);--safe-bot:env(safe-area-inset-bottom,0px);
+}
+html,body{height:100%;overflow:hidden}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
+::-webkit-scrollbar{width:3px;height:3px}
+::-webkit-scrollbar-thumb{background:rgba(59,130,246,0.25);border-radius:99px}
+#app{display:flex;height:100dvh;overflow:hidden;position:relative}
+.screen{display:none;width:100%;height:100%;flex-direction:column}
+.screen.active{display:flex}
