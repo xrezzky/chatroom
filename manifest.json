@@ -1,0 +1,18 @@
+{
+  "name": "XREZZKY Chat",
+  "short_name": "XRZ Chat",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#071633",
+  "theme_color": "#071633",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "https://i.supaimg.com/dd80182f-0c83-40a1-a7c6-04e4305dbdca/b8c2edf3-6a98-41ec-bdd0-c181ccce1e2a.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

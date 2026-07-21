@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>XREZZKY Chat</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+
+  <!-- XREZZKY Chat CSS -->
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/auth.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/profile.css">
+  <link rel="stylesheet" href="css/chat.css">
+  <link rel="stylesheet" href="css/call.css">
+
+  <!-- Anti-Clone Protection -->
+  <script>
+    (function(){
+      const allowed = [
+        'xrzzky-chatroom.vercel.app',
+        'xrezzky-chatroom.vercel.app',
+        'rezzkystoreidn.github.io',
+        'localhost',
+        '127.0.0.1'
+      ];
+      const host = window.location.hostname;
+      if(!allowed.some(d => host === d || host.endsWith('.'+d))){
+        document.documentElement.innerHTML = `
+          <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;background:#050e1f;color:#f1f5f9;font-family:sans-serif;text-align:center;padding:20px;">
+            <div style="font-size:40px;margin-bottom:16px;">🔒</div>
+            <div style="font-size:20px;font-weight:700;margin-bottom:8px;">Akses Tidak Diizinkan</div>
+            <div style="font-size:14px;color:#64748b;">Aplikasi ini tidak dapat dijalankan dari domain ini.</div>
+          </div>`;
+        throw new Error('Unauthorized domain');
+      }
+    })();
+  </script>
+</head>
+<body>
+<div id="app">
+
+<!-- SPLASH (cek session, hilang otomatis) -->
+<div id="screen-splash" class="screen active">
+  <div class="splash-logo"><i class="fa fa-message" style="font-size:32px;color:#fff;"></i></div>
+  <h1>XREZZKY<span>Chat</span></h1>
+  <p id="splash-status">Memuat sesi...</p>
+</div>
+
+<!-- AUTH -->
+<div id="screen-auth" class="screen active">
+  <div class="auth-card">
+    <div class="auth-logo"><div class="auth-logo-icon"><i class="fa fa-message" style="font-size:24px;color:#fff;"></i></div><h1>XREZZKY<span>Chat</span></h1></div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" onclick="switchAuthTab('login')">Masuk</button>
+      <button class="auth-tab" onclick="switchAuthTab('register')">Daftar</button>
+    </div>
+    <div id="auth-error" class="auth-error"></div>
+    <div id="auth-success" class="auth-success"></div>
+    <div id="auth-notice" class="notice">📧 Cek email kamu dan klik link verifikasi, lalu login.</div>
+    <div id="form-login">
+      <div class="field"><i class="fa fa-envelope"></i><input type="email" id="l-email" placeholder="Email" autocomplete="email"></div>
+      <div class="field"><i class="fa fa-lock"></i><input type="password" id="l-pass" placeholder="Password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"></div>
+      <button class="btn-primary" onclick="doLogin()">Masuk</button>
+      <p style="text-align:center;margin-top:14px;font-size:12px;color:var(--text3);cursor:pointer;" onclick="switchAuthTab('forgot')">Lupa password?</p>
+    </div>
+
+    <div id="form-register" style="display:none">
+      <div class="field"><i class="fa fa-user"></i><input type="text" id="r-user" placeholder="Username" autocomplete="username"></div>
+      <div class="field"><i class="fa fa-envelope"></i><input type="email" id="r-email" placeholder="Email" autocomplete="email"></div>
+      <div class="field"><i class="fa fa-lock"></i><input type="password" id="r-pass" placeholder="Password (min 6 karakter)" autocomplete="new-password" onkeydown="if(event.key==='Enter')doRegister()"></div>
+      <button class="btn-primary" onclick="doRegister()">Buat Akun</button>
+    </div>
+
+    <div id="form-forgot" style="display:none">
+      <p style="font-size:13px;color:var(--text2);margin-bottom:14px;">Masukkan email kamu, kami kirim link reset password.<br><span style="font-size:11px;color:var(--text3);">⏳ Limit: 1 kali per 10 menit.</span></p>
+      <div class="field"><i class="fa fa-envelope"></i><input type="email" id="f-email" placeholder="Email kamu" autocomplete="email"></div>
+      <button class="btn-primary" id="btn-forgot" onclick="doForgot()">Kirim Link Reset</button>
+      <p style="text-align:center;margin-top:12px;font-size:12px;color:var(--text3);cursor:pointer;" onclick="switchAuthTab('login')">← Kembali Login</p>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="screen-app" class="screen">
+  <div id="sidebar">
+
+    <!-- Profile Drawer -->
+    <div id="profile-drawer">
+      <div class="drawer-header">
+        <div class="back-btn" onclick="closeProfileDrawer()"><i class="fa fa-arrow-left"></i></div>
+        <h2>Profil Saya</h2>
+      </div>
+      <div class="profile-content">
+        <div class="profile-avatar-wrap">
+          <!-- Avatar dengan tombol ganti foto -->
+          <div style="position:relative;display:inline-block;margin-bottom:10px;">
+            <img id="pd-avatar" src="" style="width:88px;height:88px;border-radius:50%;border:3px solid var(--accent);box-shadow:0 0 24px rgba(59,130,246,0.3);object-fit:cover;">
+            <label style="position:absolute;bottom:0;right:0;width:28px;height:28px;background:var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;border:2px solid var(--bg2);box-shadow:0 2px 8px rgba(0,0,0,.4);" title="Ganti foto profil">
+              <i class="fa fa-camera" style="color:#fff;font-size:11px;"></i>
+              <input type="file" accept="image/*" onchange="uploadProfilePhoto(event)" style="display:none;">
+            </label>
+            <div id="pd-avatar-upload-spinner" style="display:none;position:absolute;inset:0;background:rgba(0,0,0,.6);border-radius:50%;align-items:center;justify-content:center;">
+              <span class="spinner"></span>
+            </div>
+          </div>
+          <h3 id="pd-name" style="font-size:18px;font-weight:900;margin-bottom:2px;"></h3>
+          <p id="pd-email" style="font-size:12px;color:var(--text3);margin-bottom:6px;"></p>
+          <div id="pd-role-badge" style="margin-bottom:10px;"></div>
+          <div class="profile-stats">
+            <div class="profile-stat"><strong id="pd-following">0</strong><span>Mengikuti</span></div>
+            <div class="profile-stat"><strong id="pd-followers">0</strong><span>Pengikut</span></div>
+          </div>
+        </div>
+
+        <!-- Bio preview -->
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:8px;">
+          <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">Bio</div>
+          <div id="pd-bio-text" style="font-size:13px;color:var(--text2);line-height:1.5;">Belum ada bio</div>
+        </div>
+
+        <div class="setting-row" onclick="changeUsername()">
+          <div class="setting-row-left"><div class="setting-icon" style="background:rgba(59,130,246,.15);color:#60a5fa;">✏️</div><div><div class="setting-label">Ganti Username</div><div class="setting-sub" id="pd-username-sub">-</div></div></div>
+          <i class="fa fa-chevron-right" style="color:var(--text3);font-size:12px;"></i>
+        </div>
+        <div class="setting-row" onclick="changeBio()">
+          <div class="setting-row-left"><div class="setting-icon" style="background:rgba(245,158,11,.15);color:#fbbf24;">📝</div><div><div class="setting-label">Ganti Bio</div><div class="setting-sub" id="pd-bio-sub">Tambahkan bio singkat</div></div></div>
+          <i class="fa fa-chevron-right" style="color:var(--text3);font-size:12px;"></i>
+        </div>
+        <div class="setting-row" onclick="changePassword()">
+          <div class="setting-row-left"><div class="setting-icon" style="background:rgba(34,197,94,.15);color:#4ade80;"><i class="fa fa-lock"></i></div><div><div class="setting-label">Ganti Password</div><div class="setting-sub">Perbarui keamanan akun</div></div></div>
+          <i class="fa fa-chevron-right" style="color:var(--text3);font-size:12px;"></i>
+        </div>
+        <div class="setting-row" onclick="doLogout()" style="margin-top:8px;">
+          <div class="setting-row-left"><div class="setting-icon" style="background:rgba(239,68,68,.15);color:#f87171;">🚪</div><div><div class="setting-label" style="color:#f87171;">Logout</div><div class="setting-sub">Keluar dari akun</div></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Header -->
+    <div class="sidebar-header">
+      <div class="sidebar-top-row">
+        <div class="sidebar-logo">
+          <div class="sidebar-logo-dot" onclick="openProfileDrawer()">
+            <img id="sb-avatar" src="" style="display:none;"><span id="sb-avatar-icon"><i class="fa fa-message"></i></span>
+          </div>
+          <div>
+            <h2>XREZZKY</h2>
+            <div id="sidebar-clock"></div>
+          </div>
+        </div>
+        <div class="sidebar-actions">
+          <div class="icon-btn" id="admin-panel-btn" onclick="goToAdminPanel()" title="Admin Panel" style="display:none;background:rgba(59,130,246,0.15);border-color:rgba(59,130,246,0.3);">
+            <i class="fa fa-shield-halved" style="color:var(--accent);"></i>
+          </div>
+          <div class="icon-btn" onclick="openCallHistory()" title="Riwayat Panggilan">
+            <i class="fa fa-phone-volume" style="font-size:13px;"></i>
+          </div>
+          <div class="icon-btn" onclick="openNewChat()" title="Chat Baru"><i class="fa fa-pen-to-square"></i></div>
+        </div>
+      </div>
+      <div class="sidebar-tabs">
+        <button class="sidebar-tab active" onclick="switchSidebarTab('messages')" id="tab-messages"><i class="fa fa-message"></i> Pesan</button>
+        <button class="sidebar-tab" onclick="switchSidebarTab('people')" id="tab-people"><i class="fa fa-globe"></i> Temukan</button>
+        <button class="sidebar-tab" onclick="switchSidebarTab('groups')" id="tab-groups"><i class="fa fa-users"></i> Grup</button>
+      </div>
+    </div>
+
+    <!-- Search (messages tab) -->
+    <div class="search-wrap" id="search-wrap-msgs">
+      <div class="search-box"><i class="fa fa-magnifying-glass"></i><input type="text" placeholder="Cari percakapan..." oninput="filterConvos(this.value)"></div>
+    </div>
+
+    <!-- Panel: Messages -->
+    <div class="tab-panel active" id="panel-messages">
+      <div id="convo-list">
+        <div class="convo-empty"><i class="fa fa-comments"></i><p>Belum ada percakapan</p><small>Follow seseorang di tab <i class="fa fa-globe"></i> Temukan</small></div>
+      </div>
+    </div>
+
+    <!-- Panel: People -->
+    <div class="tab-panel" id="panel-people">
+      <div style="padding:4px 2px 4px;">
+        <div class="search-box" style="margin-bottom:8px;"><i class="fa fa-magnifying-glass"></i><input type="text" placeholder="Cari username / email..." oninput="filterPeople(this.value)"></div>
+      </div>
+      <div id="people-list"><div class="convo-empty"><i class="fa fa-spinner fa-spin"></i><p>Memuat...</p></div></div>
+    </div>
+
+    <!-- TAB: Groups -->
+    <div class="tab-panel" id="panel-groups">
+      <div style="padding:4px 2px 8px;display:flex;gap:8px;">
+        <div class="search-box" style="flex:1;margin-bottom:0;">
+          <i class="fa fa-magnifying-glass"></i>
+          <input type="text" placeholder="Cari grup..." oninput="filterGroups(this.value)">
+        </div>
+        <button class="icon-btn" onclick="openCreateGroup()" title="Buat Grup Baru" style="flex-shrink:0;">
+          <i class="fa fa-plus"></i>
+        </button>
+      </div>
+      <div id="groups-list"><div class="convo-empty"><i class="fa fa-spinner fa-spin"></i><p>Memuat...</p></div></div>
+    </div>
+
+  </div>
+
+  <!-- CHATROOM -->
+  <div id="chatroom">
+    <div class="chat-empty-state" id="empty-state">
+      <i class="fa fa-message"></i><h3>Pilih percakapan</h3>
+      <p>Follow seseorang di tab <i class="fa fa-globe"></i> Temukan, lalu mulai chat</p>
+    </div>
+    <div id="chat-ui" style="display:none;flex-direction:column;height:100%;width:100%;">
+      <div id="chat-header">
+        <div class="back-btn" onclick="backToList()"><i class="fa fa-arrow-left"></i></div>
+        <div class="chat-partner-info" onclick="showPartnerInfo()">
+          <img id="ch-avatar" src=""><div><div class="chat-partner-name" id="ch-name"></div><div class="chat-partner-status" id="ch-status"></div></div>
+        </div>
+        <div class="chat-header-actions">
+          <button class="icon-btn" id="btn-voice-call" onclick="startCall()" title="Panggilan Suara" style="display:none;">
+            <i class="fa fa-phone" style="color:var(--green);font-size:13px;"></i>
+          </button>
+          <button class="icon-btn" onclick="openClearConfirm()"><i class="fa fa-trash" style="color:#f87171;font-size:13px;"></i></button>
+        </div>
+      </div>
+      <div id="reply-bar">
+        <div class="reply-inner">
+          <div><div style="font-size:10px;color:var(--accent);font-weight:700;margin-bottom:2px;">Membalas</div><div id="reply-text" style="font-size:12px;color:var(--text2);"></div></div>
+          <span class="reply-close" onclick="cancelReply()"><i class="fa fa-xmark"></i></span>
+        </div>
+      </div>
+
+      <!-- PIN BAR -->
+      <div id="pin-bar">
+        <i class="fa fa-thumbtack pin-bar-icon"></i>
+        <div class="pin-bar-content" id="pin-bar-btn">
+          <div class="pin-bar-label">Pesan Di-pin</div>
+          <div class="pin-bar-text" id="pin-bar-text"></div>
+        </div>
+        <span class="pin-bar-close" onclick="unpinMsg()"><i class="fa fa-xmark"></i></span>
+      </div>
+      <div id="request-banner">
+        <div class="req-banner-title">⚡ Permintaan Pesan</div>
+        <div class="req-banner-sub" id="req-banner-sub">mengirimkan permintaan chat. Follow balik untuk bisa chat normal.</div>
+        <div class="req-banner-actions">
+          <button class="req-btn accept" onclick="acceptChatRequest()"><i class="fa fa-check"></i> Follow Balik</button>
+          <button class="req-btn decline" onclick="declineChatRequest()"><i class="fa fa-xmark"></i> Abaikan</button>
+        </div>
+      </div>
+      <div id="msg-area"></div>
+      <div id="typing-row" style="display:none;padding:0 12px 6px;">
+        <div style="display:flex;gap:8px;align-items:flex-end;">
+          <img id="typing-avatar" src="" style="width:28px;height:28px;border-radius:50%;">
+          <div class="typing-bubble"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>
+        </div>
+      </div>
+      <div id="emoji-picker"><div class="emoji-grid" id="emoji-grid"></div></div>
+      <div id="media-preview-strip"></div>
+      <!-- Blocked banner -->
+      <div id="blocked-banner">
+        <i class="fa fa-ban"></i>
+        <span id="blocked-banner-text">Kamu tidak bisa mengirim pesan ke pengguna ini.</span>
+        <button style="margin-left:auto;background:none;border:1px solid rgba(239,68,68,.3);color:#f87171;padding:4px 12px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;" onclick="unblockFromBanner()">Buka Blokir</button>
+      </div>
+      <!-- Chat locked: sudah kirim 1 request, tunggu follow balik -->
+      <div id="chat-locked-bar">
+        <i class="fa fa-lock"></i>
+        <span>Pesan terkirim. Tunggu mereka follow balik untuk chat normal.</span>
+      </div>
+      <div id="input-bar">
+        <div class="input-row">
+          <button class="emoji-toggle" onclick="toggleEmoji()"><span>😊</span></button>
+          <label class="media-btn"><i class="fa fa-image"></i><input type="file" id="media-file-input" accept="image/*,video/*" multiple onchange="handleFileSelect(event)"></label>
+          <div class="input-box"><textarea id="msg-input" rows="1" placeholder="Ketik pesan..." oninput="autoResize(this);broadcastTyping()" onkeydown="handleKey(event)"></textarea></div>
+          <button class="send-btn" onclick="sendMsg()"><i class="fa fa-paper-plane"></i></button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- NEW CHAT MODAL -->
+<div class="modal-overlay" id="modal-new-chat" onclick="if(event.target===this)closeNewChat()">
+  <div class="bottom-sheet">
+    <div class="sheet-handle"></div><div class="sheet-title">Chat Baru</div>
+    <div class="sheet-body">
+      <div class="user-search-field"><i class="fa fa-magnifying-glass" style="color:var(--text3);font-size:14px;"></i><input type="email" id="search-email" placeholder="Cari email pengguna..." oninput="debounceSearch(this.value)" autocomplete="off"></div>
+      <div id="search-results"><div style="text-align:center;padding:32px 0;color:var(--text3);"><i class="fa fa-envelope" style="font-size:28px;opacity:.3;display:block;margin-bottom:8px;"></i><p style="font-size:13px;">Ketik email untuk mencari</p></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- RESET PASSWORD SCREEN (muncul waktu user klik link dari email) -->
+<div id="screen-reset-password" class="screen" style="">
+  <div class="reset-card">
+    <div class="auth-logo" style="margin-bottom:20px;">
+      <div class="auth-logo-icon"><i class="fa fa-lock" style="font-size:24px;color:#fff;"></i></div>
+      <h1>XREZZKY<span>Chat</span></h1>
+    </div>
+    <h2>Buat Password Baru</h2>
+    <p>Masukkan password baru kamu. Minimal 6 karakter.</p>
+    <div id="reset-error" class="auth-error"></div>
+    <div id="reset-success" class="auth-success"></div>
+    <div class="field" style="margin-bottom:6px;">
+      <i class="fa fa-lock"></i>
+      <input type="password" id="rp-pass1" placeholder="Password baru" oninput="checkPassStrength(this.value)" autocomplete="new-password">
+    </div>
+    <div class="pass-strength"><div class="pass-strength-bar" id="pass-bar"></div></div>
+    <div class="pass-strength-label" id="pass-label"></div>
+    <div class="field">
+      <i class="fa fa-lock"></i>
+      <input type="password" id="rp-pass2" placeholder="Konfirmasi password baru" autocomplete="new-password" onkeydown="if(event.key==='Enter')doResetPassword()">
+    </div>
+    <button class="btn-primary" onclick="doResetPassword()" id="btn-reset">Simpan Password Baru</button>
+    <p style="text-align:center;margin-top:14px;font-size:12px;color:var(--text3);cursor:pointer;" onclick="showScreen('screen-auth')">← Kembali ke Login</p>
+  </div>
+</div>
+
+
+<!-- USER PROFILE MODAL -->
+<div class="profile-modal-overlay" id="modal-user-profile" onclick="if(event.target===this)closeUserProfile()">
+  <div class="profile-modal">
+    <div class="profile-modal-handle"></div>
+    <div class="profile-modal-header">
+      <div class="pm-avatar-wrap">
+        <img id="pm-avatar" src="">
+        <div class="pm-online-dot" id="pm-online-dot" style="display:none"></div>
+      </div>
+      <div class="pm-name" id="pm-name"></div>
+      <div class="pm-bio" id="pm-bio"></div>
+      <div class="pm-status-badge" id="pm-status-badge"></div>
+    </div>
+    <div class="pm-stats">
+      <div class="pm-stat"><strong id="pm-followers">-</strong><span>Pengikut</span></div>
+      <div class="pm-stat"><strong id="pm-following">-</strong><span>Mengikuti</span></div>
+    </div>
+    <div class="pm-actions" id="pm-actions"></div>
+  </div>
+</div>
+
+<!-- REPORT MODAL -->
+<div class="report-overlay" id="modal-report" onclick="if(event.target===this)closeReport()">
+  <div class="report-sheet">
+    <div class="report-handle"></div>
+    <div class="report-title"><i class="fa fa-flag" style="color:var(--red)"></i> Laporkan Pengguna</div>
+    <div class="report-body">
+      <p style="font-size:12px;color:var(--text3);margin-bottom:12px;">Pilih alasan laporan:</p>
+      <div class="report-reason-grid" id="report-reason-grid">
+        <button class="report-reason-btn" onclick="selectReason(this,'Spam')"><i class="fa fa-ban"></i> Spam</button>
+        <button class="report-reason-btn" onclick="selectReason(this,'Konten tidak pantas')">🔞 Konten tidak pantas</button>
+        <button class="report-reason-btn" onclick="selectReason(this,'Pelecehan / Bullying')">😡 Pelecehan</button>
+        <button class="report-reason-btn" onclick="selectReason(this,'Penipuan')">💸 Penipuan</button>
+        <button class="report-reason-btn" onclick="selectReason(this,'Akun palsu')">🎭 Akun palsu</button>
+        <button class="report-reason-btn" onclick="selectReason(this,'Lainnya')">📝 Lainnya</button>
+      </div>
+      <textarea class="report-detail" id="report-detail" rows="3" placeholder="Ceritakan lebih detail (opsional)..."></textarea>
+      <button class="report-submit" id="report-submit-btn" onclick="submitReport()" disabled>
+        <i class="fa fa-flag"></i> Kirim Laporan
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- INCOMING CALL NOTIFICATION -->
+<!-- INCOMING CALL — FULLSCREEN -->
+<div id="incoming-call">
+  <!-- Top: info caller -->
+  <div style="display:flex;flex-direction:column;align-items:center;gap:10px;">
+    <div style="font-size:13px;color:#64748b;font-weight:600;letter-spacing:.5px;"><i class="fa fa-phone" style="color:var(--green);margin-right:4px;"></i>PANGGILAN MASUK</div>
+    <img id="ic-avatar" src="" style="width:120px;height:120px;border-radius:50%;border:3px solid rgba(34,197,94,0.5);object-fit:cover;box-shadow:0 0 0 0 rgba(34,197,94,0.4);animation:callPulse 1.5s infinite;">
+    <div style="font-size:28px;font-weight:900;color:#f1f5f9;" id="ic-name">Seseorang</div>
+    <div id="ic-type-label" style="font-size:13px;color:#64748b;"><i class="fa fa-microphone"></i> Panggilan Suara</div>
+  </div>
+
+  <!-- Bottom: tombol -->
+  <div style="display:flex;justify-content:center;gap:56px;width:100%;">
+    <button class="call-btn" onclick="rejectCall()">
+      <div class="call-btn-circle" style="background:#ef4444;box-shadow:0 6px 20px rgba(239,68,68,.5);"><i class="fa fa-phone-slash" style="color:#fff;"></i></div>
+      <span class="call-btn-label">Tolak</span>
+    </button>
+    <button class="call-btn" onclick="acceptCall()">
+      <div class="call-btn-circle" style="background:#22c55e;box-shadow:0 6px 20px rgba(34,197,94,.5);"><i class="fa fa-phone" style="color:#fff;"></i></div>
+      <span class="call-btn-label">Angkat</span>
+    </button>
+  </div>
+</div>
+
+<!-- CALL OVERLAY — FULLSCREEN -->
+<div id="call-overlay">
+  <!-- Top: info -->
+  <div style="display:flex;flex-direction:column;align-items:center;gap:10px;">
+    <img id="call-avatar" class="call-avatar" src="">
+    <div class="call-name" id="call-name"></div>
+    <div class="call-status" id="call-status">Memanggil...</div>
+    <div class="call-timer" id="call-timer" style="display:none;">0:00</div>
+  </div>
+
+  <!-- Bottom: controls -->
+  <div class="call-actions">
+    <button class="call-btn mute" id="btn-mute" onclick="toggleMute()">
+      <div class="call-btn-circle"><i class="fa fa-microphone" style="color:#fff;"></i></div>
+      <span class="call-btn-label">Bisukan</span>
+    </button>
+    <button class="call-btn end" onclick="endCall()">
+      <div class="call-btn-circle"><i class="fa fa-phone-slash" style="color:#fff;"></i></div>
+      <span class="call-btn-label">Tutup</span>
+    </button>
+    <button class="call-btn speaker" id="btn-speaker" onclick="toggleSpeaker()">
+      <div class="call-btn-circle"><i class="fa fa-volume-high" style="color:#fff;"></i></div>
+      <span class="call-btn-label">Speaker</span>
+    </button>
+  </div>
+</div>
+
+<!-- AUDIO -->
+<audio id="remote-audio" autoplay playsinline></audio>
+
+<!-- CREATE GROUP MODAL -->
+<div class="modal-overlay" id="modal-create-group" onclick="if(event.target===this)closeCreateGroup()">
+  <div class="bottom-sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title"><i class="fa fa-users"></i> Buat Grup Baru</div>
+    <div class="sheet-body">
+      <div class="field" style="margin-bottom:12px;">
+        <i class="fa fa-users"></i>
+        <input type="text" id="grp-name" placeholder="Nama grup (wajib)" maxlength="50">
+      </div>
+      <div class="field" style="margin-bottom:12px;">
+        <i class="fa fa-align-left"></i>
+        <input type="text" id="grp-desc" placeholder="Deskripsi grup (opsional)" maxlength="100">
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;margin-bottom:12px;border-top:1px solid var(--border);border-bottom:1px solid var(--border);">
+        <div>
+          <div style="font-size:13px;font-weight:700;">Grup Publik</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:2px;">Semua user bisa melihat dan bergabung</div>
+        </div>
+        <label style="position:relative;width:44px;height:24px;cursor:pointer;">
+          <input type="checkbox" id="grp-public" style="opacity:0;position:absolute;">
+          <div id="grp-pub-track" style="position:absolute;inset:0;background:var(--border2);border-radius:99px;transition:.2s;"></div>
+          <div id="grp-pub-thumb" style="position:absolute;top:2px;left:2px;width:20px;height:20px;background:#fff;border-radius:50%;transition:.2s;"></div>
+        </label>
+      </div>
+      <!-- Tambah member -->
+      <div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:8px;">Tambah Member (opsional)</div>
+      <div class="search-box" style="margin-bottom:10px;">
+        <i class="fa fa-magnifying-glass"></i>
+        <input type="text" placeholder="Cari user untuk ditambah..." oninput="searchGroupMembers(this.value)" id="grp-member-search">
+      </div>
+      <div id="grp-member-results" style="margin-bottom:10px;max-height:160px;overflow-y:auto;"></div>
+      <div id="grp-selected-members" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;"></div>
+      <button class="btn-primary" onclick="createGroup()" id="btn-create-group">
+        <i class="fa fa-plus"></i> Buat Grup
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- GROUP INFO MODAL -->
+<div class="modal-overlay" id="modal-group-info" onclick="if(event.target===this)closeGroupInfo()">
+  <div class="bottom-sheet" style="max-height:90dvh;">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title" id="grp-info-title">Info Grup</div>
+    <div class="sheet-body" id="grp-info-body"></div>
+  </div>
+</div>
+
+<div id="ctx-menu"><div class="ctx-reactions" id="ctx-reactions"></div><div class="ctx-actions" id="ctx-actions"></div></div>
+<div id="toast"></div>
+<div id="lightbox" onclick="if(event.target===this)closeLightbox()">
+  <div id="lightbox-content"></div>
+  <div class="lightbox-actions">
+    <button class="lightbox-btn" onclick="downloadLightboxMedia()"><i class="fa fa-download"></i> Download</button>
+    <button class="lightbox-btn" onclick="closeLightbox()"><i class="fa fa-xmark"></i> Tutup</button>
+  </div>
+</div>
+
+
+
+  <!-- XREZZKY Chat JS -->
+  <script src="js/config.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/profile.js"></script>
+  <script src="js/notifications.js"></script>
+  <script src="js/presence.js"></script>
+  <script src="js/follows.js"></script>
+  <script src="js/people.js"></script>
+  <script src="js/conversations.js"></script>
+  <script src="js/messages.js"></script>
+  <script src="js/groups.js"></script>
+  <script src="js/call.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/misc.js"></script>
+  <script src="js/init.js"></script>
+</body>
+</html>

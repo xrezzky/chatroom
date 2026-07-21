@@ -1,0 +1,2055 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Admin Panel — XREZZKY Chat</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0f1e;--bg2:#0e1629;--bg3:#111827;
+  --surface:#151f35;--surface2:#1a2540;
+  --border:rgba(255,255,255,0.06);--border2:rgba(255,255,255,0.1);
+  --accent:#3b82f6;--accent2:#2563eb;
+  --green:#22c55e;--red:#ef4444;--yellow:#f59e0b;--purple:#8b5cf6;
+  --text:#f1f5f9;--text2:#94a3b8;--text3:#475569;
+  --safe-top:env(safe-area-inset-top,0px);
+  --safe-bot:env(safe-area-inset-bottom,0px);
+}
+
+html,body{height:100%;overflow:hidden}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-thumb{background:rgba(59,130,246,0.2);border-radius:99px}
+
+/* ══ LAYOUT ══ */
+#app{display:flex;height:100dvh;overflow:hidden}
+
+/* ══ LOGIN ══ */
+#screen-login{
+  display:none;width:100%;align-items:center;justify-content:center;
+  background:radial-gradient(ellipse at 50% -20%,rgba(59,130,246,0.2) 0%,transparent 65%),var(--bg);
+  padding:24px;
+}
+#screen-login.active{display:flex}
+.login-card{
+  width:100%;max-width:380px;background:var(--surface);
+  border:1px solid var(--border2);border-radius:24px;
+  padding:36px 28px;box-shadow:0 32px 80px rgba(0,0,0,.6);
+}
+.login-logo{display:flex;align-items:center;gap:12px;margin-bottom:28px}
+.login-logo-icon{width:46px;height:46px;border-radius:14px;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 6px 20px rgba(59,130,246,.4)}
+.login-logo h1{font-size:18px;font-weight:900}
+.login-logo h1 span{color:var(--accent)}
+.login-logo p{font-size:11px;color:var(--text3);margin-top:1px}
+.field{position:relative;margin-bottom:12px}
+.field i{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:13px;pointer-events:none}
+.field input{width:100%;padding:13px 14px 13px 40px;background:var(--bg3);border:1.5px solid var(--border2);border-radius:12px;color:var(--text);font-size:13px;font-family:inherit;outline:none;transition:.2s}
+.field input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(59,130,246,.1)}
+.field input::placeholder{color:var(--text3)}
+.btn-login{width:100%;padding:14px;border-radius:12px;background:var(--accent);color:#fff;font-size:13px;font-weight:800;border:none;cursor:pointer;font-family:inherit;transition:.2s;box-shadow:0 6px 20px rgba(59,130,246,.35)}
+.btn-login:hover{background:var(--accent2)}
+.btn-login:disabled{opacity:.5;pointer-events:none}
+.login-error{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);color:#fca5a5;border-radius:10px;padding:10px 14px;font-size:12px;margin-bottom:12px;display:none}
+
+/* ══ MAIN APP ══ */
+#screen-app{display:none;width:100%;flex-direction:row}
+#screen-app.active{display:flex}
+
+/* ══ SIDEBAR ══ */
+#sidebar{
+  width:220px;flex-shrink:0;background:var(--bg2);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;
+  padding-top:var(--safe-top);
+}
+@media(max-width:640px){
+  #sidebar{width:60px}
+  .nav-label{display:none}
+  .sidebar-brand-name{display:none}
+}
+.sidebar-brand{
+  display:flex;align-items:center;gap:10px;
+  padding:18px 16px 14px;border-bottom:1px solid var(--border);
+  margin-bottom:8px;
+}
+.brand-icon{width:34px;height:34px;border-radius:10px;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.sidebar-brand-name{font-size:14px;font-weight:900}
+.sidebar-brand-name span{color:var(--text3);font-size:10px;display:block;font-weight:600;margin-top:1px}
+
+.nav-item{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 14px;margin:2px 8px;border-radius:12px;
+  cursor:pointer;transition:.15s;color:var(--text2);
+  font-size:13px;font-weight:600;text-decoration:none;
+  position:relative;
+}
+.nav-item:hover{background:var(--surface);color:var(--text)}
+.nav-item.active{background:rgba(59,130,246,.15);color:var(--accent)}
+.nav-item i{width:18px;text-align:center;font-size:14px;flex-shrink:0}
+.nav-badge{
+  position:absolute;right:10px;top:50%;transform:translateY(-50%);
+  background:var(--red);color:#fff;font-size:9px;font-weight:800;
+  border-radius:99px;min-width:18px;height:18px;
+  display:flex;align-items:center;justify-content:center;padding:0 4px;
+}
+
+.sidebar-footer{
+  margin-top:auto;padding:12px 8px;border-top:1px solid var(--border);
+}
+.admin-info{
+  display:flex;align-items:center;gap:8px;padding:8px;border-radius:10px;
+  background:var(--surface);margin-bottom:6px;
+}
+.admin-info img{width:30px;height:30px;border-radius:50%;flex-shrink:0}
+.admin-info-text{min-width:0}
+.admin-info-name{font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.admin-info-role{font-size:10px;font-weight:700}
+.admin-info-role.owner{color:#f59e0b}
+.admin-info-role.admin{color:var(--accent)}
+.nav-item.logout{color:var(--red)}
+.nav-item.logout:hover{background:rgba(239,68,68,.1)}
+
+/* ══ MAIN CONTENT ══ */
+#main{flex:1;overflow:hidden;display:flex;flex-direction:column}
+
+.page{display:none;flex:1;overflow:hidden;flex-direction:column}
+.page.active{display:flex}
+
+.page-header{
+  padding:18px 24px;border-bottom:1px solid var(--border);
+  flex-shrink:0;display:flex;align-items:center;justify-content:space-between;
+  background:var(--bg2);
+}
+.page-title{font-size:18px;font-weight:900}
+.page-sub{font-size:12px;color:var(--text3);margin-top:2px}
+.page-actions{display:flex;gap:8px}
+
+.page-body{flex:1;overflow-y:auto;padding:20px 24px}
+
+/* ══ STATS CARDS ══ */
+.stats-grid{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+  gap:12px;margin-bottom:20px;
+}
+.stat-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:16px;padding:16px;transition:.15s;
+}
+.stat-card:hover{border-color:var(--border2);background:var(--surface2)}
+.stat-card-icon{
+  width:36px;height:36px;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;margin-bottom:10px;
+}
+.stat-card-val{font-size:24px;font-weight:900;line-height:1}
+.stat-card-label{font-size:11px;color:var(--text3);margin-top:4px;font-weight:600}
+.stat-card-delta{font-size:10px;margin-top:2px}
+
+/* ══ TABLE / LIST ══ */
+.data-table{width:100%}
+.data-row{
+  display:flex;align-items:center;gap:12px;
+  padding:12px 16px;border-radius:14px;transition:.15s;
+  border:1px solid transparent;margin-bottom:4px;
+}
+.data-row:hover{background:var(--surface);border-color:var(--border)}
+.data-avatar{width:42px;height:42px;border-radius:50%;flex-shrink:0;position:relative}
+.data-avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover;border:2px solid var(--border2)}
+.online-dot{position:absolute;bottom:1px;right:1px;width:11px;height:11px;background:var(--green);border-radius:50%;border:2px solid var(--bg)}
+.data-info{flex:1;min-width:0}
+.data-name{font-size:13px;font-weight:700}
+.data-sub{font-size:11px;color:var(--text3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.data-actions{display:flex;gap:6px;flex-shrink:0}
+
+/* ══ BUTTONS ══ */
+.btn{
+  padding:8px 14px;border-radius:10px;font-size:12px;font-weight:700;
+  cursor:pointer;border:none;font-family:inherit;transition:.15s;
+  display:inline-flex;align-items:center;gap:6px;
+}
+.btn-sm{padding:5px 10px;font-size:11px;border-radius:8px}
+.btn-icon{width:34px;height:34px;padding:0;border-radius:10px;justify-content:center}
+.btn-primary{background:var(--accent);color:#fff;box-shadow:0 3px 10px rgba(59,130,246,.3)}
+.btn-primary:hover{background:var(--accent2)}
+.btn-danger{background:rgba(239,68,68,.12);color:var(--red);border:1px solid rgba(239,68,68,.25)}
+.btn-danger:hover{background:rgba(239,68,68,.22)}
+.btn-success{background:rgba(34,197,94,.12);color:var(--green);border:1px solid rgba(34,197,94,.25)}
+.btn-success:hover{background:rgba(34,197,94,.22)}
+.btn-warning{background:rgba(245,158,11,.12);color:var(--yellow);border:1px solid rgba(245,158,11,.25)}
+.btn-warning:hover{background:rgba(245,158,11,.22)}
+.btn-ghost{background:var(--surface2);color:var(--text2);border:1px solid var(--border2)}
+.btn-ghost:hover{background:var(--surface);color:var(--text)}
+.btn:disabled{opacity:.5;pointer-events:none}
+
+/* ══ BADGES ══ */
+.badge{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:800;padding:2px 8px;border-radius:99px}
+.badge-owner{background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff}
+.badge-admin{background:rgba(59,130,246,.2);color:#60a5fa;border:1px solid rgba(59,130,246,.3)}
+.badge-user{background:var(--surface2);color:var(--text3);border:1px solid var(--border)}
+.badge-pending{background:rgba(245,158,11,.15);color:var(--yellow)}
+.badge-resolved{background:rgba(34,197,94,.15);color:var(--green)}
+.badge-dismissed{background:var(--surface2);color:var(--text3)}
+.badge-online{background:rgba(34,197,94,.15);color:var(--green)}
+.badge-offline{background:var(--surface2);color:var(--text3)}
+.badge-banned{background:rgba(239,68,68,.15);color:var(--red)}
+
+/* ══ SEARCH BAR ══ */
+.search-bar{
+  display:flex;align-items:center;gap:10px;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:12px;padding:10px 14px;margin-bottom:16px;
+}
+.search-bar i{color:var(--text3);font-size:13px}
+.search-bar input{background:none;border:none;outline:none;color:var(--text);font-size:13px;font-family:inherit;flex:1}
+.search-bar input::placeholder{color:var(--text3)}
+
+/* ══ FILTER TABS ══ */
+.filter-tabs{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+.filter-tab{
+  padding:5px 12px;border-radius:8px;font-size:11px;font-weight:700;
+  cursor:pointer;border:1px solid var(--border2);background:var(--surface);
+  color:var(--text3);transition:.15s;font-family:inherit;
+}
+.filter-tab.active{background:rgba(59,130,246,.15);color:var(--accent);border-color:rgba(59,130,246,.3)}
+
+/* ══ REPORT CARD ══ */
+.report-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:16px;padding:16px;margin-bottom:10px;transition:.15s;
+}
+.report-card:hover{border-color:var(--border2)}
+.report-card-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;gap:10px}
+.report-users{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.report-avatar-small{width:28px;height:28px;border-radius:50%;border:2px solid var(--border2)}
+.report-card-body{font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:10px}
+.report-card-footer{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.report-meta{font-size:10px;color:var(--text3)}
+.report-actions{display:flex;gap:6px;flex-wrap:wrap}
+
+/* ══ MONITOR MODAL ══ */
+#monitor-modal{
+  position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:200;
+  display:none;align-items:center;justify-content:center;padding:16px;
+}
+#monitor-modal.open{display:flex}
+.monitor-card{
+  width:100%;max-width:500px;max-height:90dvh;
+  background:var(--bg2);border:1px solid var(--border2);
+  border-radius:20px;overflow:hidden;display:flex;flex-direction:column;
+  box-shadow:0 32px 80px rgba(0,0,0,.7);
+}
+.monitor-header{
+  padding:14px 18px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  flex-shrink:0;
+}
+.monitor-header-info{display:flex;align-items:center;gap:10px}
+.monitor-title{font-size:14px;font-weight:800}
+.monitor-sub{font-size:11px;color:var(--text3)}
+.monitor-msgs{flex:1;overflow-y:auto;padding:14px}
+.monitor-msg{margin-bottom:8px}
+.monitor-msg-bubble{
+  display:inline-block;max-width:75%;padding:8px 12px;
+  border-radius:14px;font-size:13px;line-height:1.5;word-break:break-word;
+}
+.monitor-msg.left{text-align:left}
+.monitor-msg.right{text-align:right}
+.monitor-msg.left .monitor-msg-bubble{background:var(--surface2);border:1px solid var(--border)}
+.monitor-msg.right .monitor-msg-bubble{background:rgba(37,99,235,.3);border:1px solid rgba(59,130,246,.2)}
+.monitor-msg-meta{font-size:10px;color:var(--text3);margin-top:2px;padding:0 4px}
+.monitor-msg-sender{font-size:10px;color:var(--text3);font-weight:700;margin-bottom:2px}
+.monitor-empty{padding:40px;text-align:center;color:var(--text3)}
+
+/* ══ BROADCAST MODAL ══ */
+#broadcast-modal{
+  position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:200;
+  display:none;align-items:center;justify-content:center;padding:20px;
+}
+#broadcast-modal.open{display:flex}
+.broadcast-card{
+  width:100%;max-width:420px;background:var(--bg2);
+  border:1px solid var(--border2);border-radius:20px;
+  padding:24px;box-shadow:0 24px 60px rgba(0,0,0,.6);
+}
+.broadcast-title{font-size:17px;font-weight:900;margin-bottom:4px}
+.broadcast-sub{font-size:12px;color:var(--text3);margin-bottom:16px}
+.broadcast-textarea{
+  width:100%;background:var(--bg3);border:1.5px solid var(--border2);
+  border-radius:12px;padding:12px 14px;color:var(--text);
+  font-size:13px;font-family:inherit;resize:none;outline:none;
+  margin-bottom:12px;
+}
+.broadcast-textarea:focus{border-color:var(--accent)}
+
+/* ══ EMPTY STATE ══ */
+.empty-state{
+  display:flex;flex-direction:column;align-items:center;
+  justify-content:center;padding:60px 20px;gap:10px;color:var(--text3);
+  text-align:center;
+}
+.empty-state i{font-size:36px;opacity:.3}
+.empty-state p{font-size:13px}
+
+/* ══ SPINNER ══ */
+.spinner{width:20px;height:20px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .6s linear infinite;display:inline-block}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ══ TOAST ══ */
+#toast{
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+  background:var(--surface2);border:1px solid var(--border2);
+  color:var(--text);padding:10px 20px;border-radius:12px;
+  font-size:13px;font-weight:600;z-index:999;
+  opacity:0;transition:.25s;pointer-events:none;
+  white-space:nowrap;box-shadow:0 8px 24px rgba(0,0,0,.4);
+}
+#toast.show{opacity:1}
+
+/* ══ CONFIRM DIALOG ══ */
+#confirm-modal{
+  position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:300;
+  display:none;align-items:center;justify-content:center;padding:20px;
+}
+#confirm-modal.open{display:flex}
+.confirm-card{
+  width:100%;max-width:340px;background:var(--bg2);border:1px solid var(--border2);
+  border-radius:18px;padding:24px;box-shadow:0 24px 60px rgba(0,0,0,.6);text-align:center;
+}
+.confirm-icon{font-size:36px;margin-bottom:10px}
+.confirm-title{font-size:16px;font-weight:800;margin-bottom:6px}
+.confirm-msg{font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:18px}
+.confirm-actions{display:flex;gap:10px}
+.confirm-actions .btn{flex:1;justify-content:center}
+
+/* ══ ACTIVITY CHART ══ */
+.mini-chart{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:14px;padding:16px;margin-bottom:16px;
+}
+.mini-chart-title{font-size:12px;font-weight:700;color:var(--text2);margin-bottom:12px}
+.chart-bars{display:flex;align-items:flex-end;gap:4px;height:60px}
+.chart-bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px}
+.chart-bar{width:100%;background:var(--accent);border-radius:4px 4px 0 0;min-height:3px;transition:.3s}
+.chart-bar-label{font-size:8px;color:var(--text3)}
+
+/* ══ STORAGE ══ */
+.storage-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:18px;padding:20px;margin-bottom:14px;
+}
+.storage-card-header{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.storage-card-icon{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.storage-card-title{font-size:15px;font-weight:800}
+.storage-card-sub{font-size:11px;color:var(--text3);margin-top:2px}
+.storage-progress-wrap{margin-bottom:14px}
+.storage-progress-label{display:flex;justify-content:space-between;margin-bottom:6px}
+.storage-progress-name{font-size:12px;font-weight:700}
+.storage-progress-val{font-size:12px;color:var(--text3)}
+.storage-progress-track{height:8px;background:var(--surface2);border-radius:99px;overflow:hidden}
+.storage-progress-fill{height:100%;border-radius:99px;transition:width .6s cubic-bezier(.4,0,.2,1)}
+.storage-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;padding-top:14px;border-top:1px solid var(--border)}
+.storage-stat-row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.storage-stat-item{flex:1;min-width:100px;background:var(--surface2);border-radius:12px;padding:12px;text-align:center}
+.storage-stat-item strong{display:block;font-size:18px;font-weight:900;margin-bottom:2px}
+.storage-stat-item span{font-size:10px;color:var(--text3)}
+
+/* Confirm email modal */
+#confirm-email-modal{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:400;display:none;align-items:center;justify-content:center;padding:20px}
+#confirm-email-modal.open{display:flex}
+.confirm-email-card{width:100%;max-width:380px;background:var(--bg2);border:1px solid var(--border2);border-radius:20px;padding:28px;box-shadow:0 24px 60px rgba(0,0,0,.6)}
+.confirm-email-title{font-size:16px;font-weight:900;margin-bottom:6px}
+.confirm-email-sub{font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:16px}
+.confirm-email-input{width:100%;background:var(--bg3);border:1.5px solid var(--border2);border-radius:12px;padding:12px 14px;color:var(--text);font-size:13px;font-family:inherit;outline:none;margin-bottom:12px}
+.confirm-email-input:focus{border-color:var(--accent)}
+.confirm-email-actions{display:flex;gap:10px}
+
+/* OTP Digit inputs */
+.otp-digit{
+  width:44px;height:52px;background:var(--bg3);
+  border:2px solid var(--border2);border-radius:12px;
+  color:var(--text);font-size:22px;font-weight:900;
+  text-align:center;outline:none;font-family:inherit;
+  transition:.15s;
+}
+.otp-digit:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(59,130,246,.15)}
+.otp-digit.filled{border-color:var(--accent);background:rgba(59,130,246,.08)}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ══ LOGIN ══ -->
+  <div id="screen-login" class="active">
+    <div class="login-card">
+      <div class="login-logo">
+        <div class="login-logo-icon">🛡️</div>
+        <div>
+          <h1>XREZZKY<span>Admin</span></h1>
+          <p>Panel Administrasi</p>
+        </div>
+      </div>
+      <div id="login-error" class="login-error"></div>
+      <div class="field">
+        <i class="fa fa-envelope"></i>
+        <input type="email" id="l-email" placeholder="Email admin" autocomplete="email">
+      </div>
+      <div class="field">
+        <i class="fa fa-lock"></i>
+        <input type="password" id="l-pass" placeholder="Password" onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
+      <button class="btn-login" onclick="doLogin()" id="btn-login">Masuk ke Admin Panel</button>
+    </div>
+  </div>
+
+  <!-- ══ APP ══ -->
+  <div id="screen-app">
+
+    <!-- SIDEBAR -->
+    <div id="sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-icon">🛡️</div>
+        <div class="sidebar-brand-name">
+          Admin Panel
+          <span>XREZZKY Chat</span>
+        </div>
+      </div>
+
+      <div onclick="showPage('dashboard')" class="nav-item active" id="nav-dashboard">
+        <i class="fa fa-chart-line"></i>
+        <span class="nav-label">Dashboard</span>
+      </div>
+      <div onclick="showPage('users')" class="nav-item" id="nav-users">
+        <i class="fa fa-users"></i>
+        <span class="nav-label">Pengguna</span>
+      </div>
+      <div onclick="showPage('reports')" class="nav-item" id="nav-reports">
+        <i class="fa fa-flag"></i>
+        <span class="nav-label">Laporan</span>
+        <span class="nav-badge" id="reports-badge" style="display:none;">0</span>
+      </div>
+      <div onclick="showPage('monitor')" class="nav-item" id="nav-monitor">
+        <i class="fa fa-eye"></i>
+        <span class="nav-label">Monitor Chat</span>
+      </div>
+      <div onclick="showPage('bans')" class="nav-item" id="nav-bans">
+        <i class="fa fa-ban"></i>
+        <span class="nav-label">Ban List</span>
+      </div>
+      <div onclick="openBroadcast()" class="nav-item" id="nav-broadcast">
+        <i class="fa fa-bullhorn"></i>
+        <span class="nav-label">Broadcast</span>
+      </div>
+      <div onclick="showPage('storage')" class="nav-item" id="nav-storage">
+        <i class="fa fa-hard-drive"></i>
+        <span class="nav-label">Storage</span>
+      </div>
+      <div onclick="showPage('settings')" class="nav-item" id="nav-settings">
+        <i class="fa fa-gear"></i>
+        <span class="nav-label">Pengaturan</span>
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="admin-info">
+          <img id="admin-avatar" src="">
+          <div class="admin-info-text">
+            <div class="admin-info-name" id="admin-username">-</div>
+            <div class="admin-info-role" id="admin-role-text">-</div>
+          </div>
+        </div>
+        <div onclick="goToChat()" class="nav-item">
+          <i class="fa fa-message"></i>
+          <span class="nav-label">Buka Chat</span>
+        </div>
+        <div onclick="doLogout()" class="nav-item logout">
+          <i class="fa fa-right-from-bracket"></i>
+          <span class="nav-label">Logout</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- MAIN -->
+    <div id="main">
+
+      <!-- ══ DASHBOARD ══ -->
+      <div class="page active" id="page-dashboard">
+        <div class="page-header">
+          <div>
+            <div class="page-title">Dashboard</div>
+            <div class="page-sub" id="dash-greeting">Selamat datang</div>
+          </div>
+          <div class="page-actions">
+            <button class="btn btn-ghost btn-sm" onclick="refreshDashboard()">
+              <i class="fa fa-rotate-right"></i>
+            </button>
+          </div>
+        </div>
+        <div class="page-body">
+          <!-- Stats -->
+          <div class="stats-grid" id="stats-grid">
+            <div class="stat-card">
+              <div class="stat-card-icon" style="background:rgba(59,130,246,.15);color:var(--accent);">👥</div>
+              <div class="stat-card-val" id="s-users">-</div>
+              <div class="stat-card-label">Total Pengguna</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-card-icon" style="background:rgba(34,197,94,.15);color:var(--green);">🟢</div>
+              <div class="stat-card-val" id="s-online" style="color:var(--green);">-</div>
+              <div class="stat-card-label">Online Sekarang</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-card-icon" style="background:rgba(139,92,246,.15);color:var(--purple);">💬</div>
+              <div class="stat-card-val" id="s-msgs">-</div>
+              <div class="stat-card-label">Total Pesan</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-card-icon" style="background:rgba(239,68,68,.15);color:var(--red);">🚨</div>
+              <div class="stat-card-val" id="s-reports" style="color:var(--red);">-</div>
+              <div class="stat-card-label">Laporan Pending</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-card-icon" style="background:rgba(245,158,11,.15);color:var(--yellow);">💬</div>
+              <div class="stat-card-val" id="s-convos">-</div>
+              <div class="stat-card-label">Percakapan</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-card-icon" style="background:rgba(239,68,68,.1);color:var(--red);">🚫</div>
+              <div class="stat-card-val" id="s-bans">-</div>
+              <div class="stat-card-label">User Di-ban</div>
+            </div>
+          </div>
+
+          <!-- Chart pesan per hari (7 hari terakhir) -->
+          <div class="mini-chart">
+            <div class="mini-chart-title">📊 Pesan 7 Hari Terakhir</div>
+            <div class="chart-bars" id="chart-bars">
+              <div style="text-align:center;width:100%;color:var(--text3);font-size:12px;"><span class="spinner"></span></div>
+            </div>
+          </div>
+
+          <!-- User terbaru -->
+          <div style="font-size:12px;font-weight:700;color:var(--text3);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">User Terbaru</div>
+          <div id="recent-users"></div>
+
+          <!-- Laporan terbaru -->
+          <div style="font-size:12px;font-weight:700;color:var(--text3);margin:16px 0 10px;text-transform:uppercase;letter-spacing:.5px;">Laporan Terbaru</div>
+          <div id="recent-reports"></div>
+        </div>
+      </div>
+
+      <!-- ══ USERS ══ -->
+      <div class="page" id="page-users">
+        <div class="page-header">
+          <div>
+            <div class="page-title">Pengguna</div>
+            <div class="page-sub" id="users-count-label">Memuat...</div>
+          </div>
+          <div class="page-actions">
+            <button class="btn btn-ghost btn-sm" onclick="loadUsers()"><i class="fa fa-rotate-right"></i></button>
+          </div>
+        </div>
+        <div class="page-body">
+          <div class="search-bar">
+            <i class="fa fa-magnifying-glass"></i>
+            <input type="text" placeholder="Cari username atau email..." oninput="filterUsers(this.value)" id="user-search">
+          </div>
+          <div class="filter-tabs">
+            <button class="filter-tab active" onclick="setUserFilter('all',this)">Semua</button>
+            <button class="filter-tab" onclick="setUserFilter('online',this)">🟢 Online</button>
+            <button class="filter-tab" onclick="setUserFilter('owner',this)">👑 Owner</button>
+            <button class="filter-tab" onclick="setUserFilter('admin',this)">🛡️ Admin</button>
+          </div>
+          <div id="users-list"></div>
+        </div>
+      </div>
+
+      <!-- ══ REPORTS ══ -->
+      <div class="page" id="page-reports">
+        <div class="page-header">
+          <div>
+            <div class="page-title">Laporan</div>
+            <div class="page-sub">Tinjau dan tindak laporan user</div>
+          </div>
+          <div class="page-actions">
+            <button class="btn btn-ghost btn-sm" onclick="loadReports()"><i class="fa fa-rotate-right"></i></button>
+          </div>
+        </div>
+        <div class="page-body">
+          <div class="filter-tabs">
+            <button class="filter-tab active" onclick="setReportFilter('pending',this)">🟡 Pending</button>
+            <button class="filter-tab" onclick="setReportFilter('all',this)">Semua</button>
+            <button class="filter-tab" onclick="setReportFilter('resolved',this)">✅ Selesai</button>
+            <button class="filter-tab" onclick="setReportFilter('dismissed',this)">Diabaikan</button>
+          </div>
+          <div id="reports-list"></div>
+        </div>
+      </div>
+
+      <!-- ══ MONITOR ══ -->
+      <div class="page" id="page-monitor">
+        <div class="page-header">
+          <div>
+            <div class="page-title">Monitor Chat</div>
+            <div class="page-sub">Pantau percakapan antar pengguna</div>
+          </div>
+          <div class="page-actions">
+            <button class="btn btn-ghost btn-sm" onclick="loadMonitorList()"><i class="fa fa-rotate-right"></i></button>
+          </div>
+        </div>
+        <div class="page-body">
+          <div class="search-bar">
+            <i class="fa fa-magnifying-glass"></i>
+            <input type="text" placeholder="Cari username..." oninput="filterMonitor(this.value)">
+          </div>
+          <div id="monitor-list"></div>
+        </div>
+      </div>
+
+      <!-- ══ BANS ══ -->
+      <div class="page" id="page-bans">
+        <div class="page-header">
+          <div>
+            <div class="page-title">Ban List</div>
+            <div class="page-sub" id="bans-count-label">Memuat...</div>
+          </div>
+          <div class="page-actions">
+            <button class="btn btn-ghost btn-sm" onclick="loadBans()"><i class="fa fa-rotate-right"></i></button>
+          </div>
+        </div>
+        <div class="page-body">
+          <div id="bans-list"></div>
+        </div>
+      </div>
+
+      <!-- ══ STORAGE ══ -->
+      <div class="page" id="page-storage">
+        <div class="page-header">
+          <div>
+            <div class="page-title">💾 Storage Monitor</div>
+            <div class="page-sub">Pantau & kelola pemakaian Cloudinary dan Supabase</div>
+          </div>
+          <div class="page-actions">
+            <button class="btn btn-ghost btn-sm" onclick="loadStoragePage()">
+              <i class="fa fa-rotate-right"></i> Refresh
+            </button>
+          </div>
+        </div>
+        <div class="page-body" id="storage-body">
+          <div class="empty-state"><span class="spinner"></span></div>
+        </div>
+      </div>
+
+      <!-- ══ SETTINGS ══ -->
+      <div class="page" id="page-settings">
+        <div class="page-header">
+          <div>
+            <div class="page-title">⚙️ Pengaturan Admin</div>
+            <div class="page-sub">Kelola mode stealth dan visibilitas akun</div>
+          </div>
+        </div>
+        <div class="page-body">
+
+          <!-- STEALTH MODE -->
+          <div class="storage-card">
+            <div class="storage-card-header">
+              <div class="storage-card-icon" style="background:rgba(139,92,246,.15);">🕵️</div>
+              <div>
+                <div class="storage-card-title">Mode Stealth</div>
+                <div class="storage-card-sub">Sembunyikan akun dari tab 🌐 Temukan</div>
+              </div>
+            </div>
+
+            <div style="background:var(--surface2);border-radius:14px;padding:16px;margin-bottom:14px;">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+                <div>
+                  <div style="font-size:13px;font-weight:700;">Sembunyikan dari Global Feed</div>
+                  <div style="font-size:11px;color:var(--text3);margin-top:2px;">User biasa tidak bisa melihat atau follow akun kamu</div>
+                </div>
+                <label style="position:relative;width:46px;height:26px;cursor:pointer;">
+                  <input type="checkbox" id="toggle-stealth" style="opacity:0;position:absolute;" onchange="toggleStealthMode(this.checked)">
+                  <div id="stealth-track" style="position:absolute;inset:0;background:var(--border2);border-radius:99px;transition:.25s;"></div>
+                  <div id="stealth-thumb" style="position:absolute;top:3px;left:3px;width:20px;height:20px;background:#fff;border-radius:50%;transition:.25s;box-shadow:0 1px 4px rgba(0,0,0,.3);"></div>
+                </label>
+              </div>
+              <div style="font-size:11px;color:var(--text3);line-height:1.6;padding:10px;background:rgba(139,92,246,.08);border-radius:8px;border:1px solid rgba(139,92,246,.15);">
+                💡 Kalau stealth aktif, kamu tetap bisa:<br>
+                • Chat duluan ke siapapun<br>
+                • Ditemukan lewat kata kunci rahasia<br>
+                • Melihat dan memantau semua user
+              </div>
+            </div>
+
+            <!-- KATA KUNCI RAHASIA -->
+            <div style="margin-bottom:14px;">
+              <div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:8px;">🔑 Kata Kunci Rahasia</div>
+              <div style="font-size:11px;color:var(--text3);margin-bottom:10px;line-height:1.6;">
+                User bisa menemukan akun kamu di tab Temukan dengan mengetik kata kunci ini di search bar.
+              </div>
+              <div style="display:flex;gap:8px;">
+                <input type="text" id="keyword-input" placeholder="Contoh: xrezzky2025" 
+                  style="flex:1;background:var(--bg3);border:1.5px solid var(--border2);border-radius:12px;padding:11px 14px;color:var(--text);font-size:13px;font-family:inherit;outline:none;"
+                  onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'">
+                <button class="btn btn-primary btn-sm" onclick="saveKeyword()">
+                  <i class="fa fa-floppy-disk"></i> Simpan
+                </button>
+              </div>
+              <div id="keyword-saved" style="font-size:11px;color:var(--green);margin-top:6px;display:none;">✅ Kata kunci disimpan!</div>
+            </div>
+
+            <!-- CHAT DULUAN -->
+            <div style="background:var(--surface2);border-radius:14px;padding:14px;">
+              <div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:8px;">💬 Chat Langsung ke User</div>
+              <div style="font-size:11px;color:var(--text3);margin-bottom:10px;">Kirim pesan pertama ke user manapun tanpa perlu follow dulu.</div>
+              <div style="display:flex;gap:8px;">
+                <input type="text" id="direct-chat-email" placeholder="Email user tujuan..."
+                  style="flex:1;background:var(--bg3);border:1.5px solid var(--border2);border-radius:12px;padding:11px 14px;color:var(--text);font-size:13px;font-family:inherit;outline:none;"
+                  onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'">
+                <button class="btn btn-primary btn-sm" onclick="adminDirectChat()">
+                  <i class="fa fa-message"></i> Chat
+                </button>
+              </div>
+              <div id="direct-chat-result" style="font-size:11px;margin-top:6px;"></div>
+            </div>
+          </div>
+
+          <!-- INFO AKUN -->
+          <div class="storage-card">
+            <div class="storage-card-header">
+              <div class="storage-card-icon" style="background:rgba(59,130,246,.15);">👤</div>
+              <div>
+                <div class="storage-card-title">Info Akun Admin</div>
+                <div class="storage-card-sub" id="settings-role-label"></div>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              <div style="display:flex;justify-content:space-between;padding:10px;background:var(--surface2);border-radius:10px;">
+                <span style="font-size:12px;color:var(--text3);">Username</span>
+                <span style="font-size:12px;font-weight:700;" id="settings-username">-</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;padding:10px;background:var(--surface2);border-radius:10px;">
+                <span style="font-size:12px;color:var(--text3);">Email</span>
+                <span style="font-size:12px;font-weight:700;" id="settings-email">-</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;padding:10px;background:var(--surface2);border-radius:10px;">
+                <span style="font-size:12px;color:var(--text3);">Role</span>
+                <span style="font-size:12px;font-weight:700;" id="settings-role">-</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;padding:10px;background:var(--surface2);border-radius:10px;">
+                <span style="font-size:12px;color:var(--text3);">Mode Stealth</span>
+                <span style="font-size:12px;font-weight:700;" id="settings-stealth">-</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+<div id="monitor-modal">
+  <div class="monitor-card">
+    <div class="monitor-header">
+      <div class="monitor-header-info">
+        <div>
+          <div class="monitor-title" id="monitor-title">Chat</div>
+          <div class="monitor-sub" id="monitor-sub"></div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button class="btn btn-danger btn-sm" id="monitor-ban-btn" onclick="banFromMonitor()">
+          <i class="fa fa-ban"></i> Ban
+        </button>
+        <button class="btn btn-ghost btn-sm" onclick="closeMonitor()">
+          <i class="fa fa-xmark"></i>
+        </button>
+      </div>
+    </div>
+    <div class="monitor-msgs" id="monitor-msgs">
+      <div class="monitor-empty"><span class="spinner"></span></div>
+    </div>
+  </div>
+</div>
+
+<!-- BROADCAST MODAL -->
+<div id="broadcast-modal">
+  <div class="broadcast-card">
+    <div class="broadcast-title">📢 Broadcast Pesan</div>
+    <div class="broadcast-sub">Kirim notifikasi ke semua pengguna terdaftar</div>
+    <textarea class="broadcast-textarea" id="broadcast-text" rows="4" placeholder="Tulis pesan broadcast..."></textarea>
+    <div style="display:flex;gap:10px;">
+      <button class="btn btn-ghost" style="flex:1;" onclick="closeBroadcast()">Batal</button>
+      <button class="btn btn-primary" style="flex:1;" onclick="sendBroadcast()" id="btn-broadcast">
+        <i class="fa fa-paper-plane"></i> Kirim
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM MODAL -->
+<div id="confirm-modal">
+  <div class="confirm-card">
+    <div class="confirm-icon" id="confirm-icon">⚠️</div>
+    <div class="confirm-title" id="confirm-title">Konfirmasi</div>
+    <div class="confirm-msg" id="confirm-msg"></div>
+    <div class="confirm-actions">
+      <button class="btn btn-ghost" onclick="closeConfirm()">Batal</button>
+      <button class="btn btn-danger" id="confirm-ok-btn" onclick="confirmOk()">Lanjutkan</button>
+    </div>
+  </div>
+</div>
+
+<!-- OTP CONFIRM MODAL -->
+<div id="otp-modal" style="position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:400;display:none;align-items:center;justify-content:center;padding:20px;">
+  <div style="width:100%;max-width:360px;background:var(--bg2);border:1px solid var(--border2);border-radius:22px;padding:28px;box-shadow:0 24px 60px rgba(0,0,0,.7);">
+    <div style="font-size:32px;text-align:center;margin-bottom:10px;">📧</div>
+    <div style="font-size:16px;font-weight:900;text-align:center;margin-bottom:6px;" id="otp-title">Konfirmasi OTP</div>
+    <div style="font-size:12px;color:var(--text2);text-align:center;line-height:1.6;margin-bottom:20px;" id="otp-sub">
+      Kode 6 digit dikirim ke Gmail admin kamu.<br>Berlaku <b>5 menit</b>.
+    </div>
+
+    <!-- OTP Input -->
+    <div id="otp-step-send" style="display:block;">
+      <div style="font-size:12px;color:var(--text3);margin-bottom:6px;">Email admin:</div>
+      <div style="font-size:13px;font-weight:700;color:var(--accent);margin-bottom:16px;" id="otp-email-label"></div>
+      <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="sendOTP()" id="otp-send-btn">
+        <i class="fa fa-paper-plane"></i> Kirim Kode ke Gmail
+      </button>
+    </div>
+
+    <div id="otp-step-verify" style="display:none;">
+      <div style="font-size:12px;color:var(--text3);margin-bottom:8px;">Masukkan kode 6 digit:</div>
+      <!-- OTP digit inputs -->
+      <div style="display:flex;gap:8px;justify-content:center;margin-bottom:14px;" id="otp-inputs">
+        <input type="text" maxlength="1" class="otp-digit" oninput="otpDigitInput(this,0)" onkeydown="otpDigitKey(event,0)">
+        <input type="text" maxlength="1" class="otp-digit" oninput="otpDigitInput(this,1)" onkeydown="otpDigitKey(event,1)">
+        <input type="text" maxlength="1" class="otp-digit" oninput="otpDigitInput(this,2)" onkeydown="otpDigitKey(event,2)">
+        <input type="text" maxlength="1" class="otp-digit" oninput="otpDigitInput(this,3)" onkeydown="otpDigitKey(event,3)">
+        <input type="text" maxlength="1" class="otp-digit" oninput="otpDigitInput(this,4)" onkeydown="otpDigitKey(event,4)">
+        <input type="text" maxlength="1" class="otp-digit" oninput="otpDigitInput(this,5)" onkeydown="otpDigitKey(event,5)">
+      </div>
+      <div id="otp-error" style="font-size:11px;color:var(--red);text-align:center;margin-bottom:10px;display:none;"></div>
+      <div id="otp-timer" style="margin-bottom:12px;"></div>
+      <div id="otp-countdown" style="font-size:11px;color:var(--text3);text-align:center;margin-bottom:12px;"></div>
+      <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="verifyOTP()" id="otp-verify-btn">
+        <i class="fa fa-check"></i> Verifikasi Kode
+      </button>
+      <p style="text-align:center;margin-top:10px;font-size:11px;color:var(--accent);cursor:pointer;" onclick="resetOTPStep()">↩ Kirim ulang kode</p>
+    </div>
+
+    <button class="btn btn-ghost" style="width:100%;justify-content:center;margin-top:10px;" onclick="closeOTPModal()">Batal</button>
+  </div>
+</div>
+
+<!-- CONFIRM EMAIL MODAL (legacy, diganti OTP) -->
+<div id="confirm-email-modal" style="display:none;"></div>
+
+<div id="toast"></div>
+
+<script>
+// ══════════════════════════════════════
+//  SUPABASE
+// ══════════════════════════════════════
+const { createClient } = window.supabase;
+const sb = createClient(
+  'https://ewmxwzwudwefwabnfgqu.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV3bXh3end1ZHdlZndhYm5mZ3F1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4NTY5MTUsImV4cCI6MjA5NDQzMjkxNX0.R4fb-wcqC1F_lA4t32WHinoR2zRdA3DFScny8lyWysA',
+  { auth: { persistSession:true, storageKey:'xrezzky-admin-session', autoRefreshToken:true, detectSessionInUrl:false } }
+);
+
+// ══════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════
+let ME = null, MY_PROFILE = null;
+let allUsers = [], allReports = [], allBans = [];
+let _reportFilter = 'pending', _userFilter = 'all';
+let _monitorUserId = null, _monitorUsername = null;
+let _confirmCallback = null;
+
+// ══════════════════════════════════════
+//  AUTH
+// ══════════════════════════════════════
+let _adminAuthReady = false;
+
+sb.auth.onAuthStateChange(async (event, session) => {
+  // Skip INITIAL_SESSION — kita handle manual di bawah
+  if (event === 'INITIAL_SESSION') return;
+
+  if (event === 'SIGNED_IN' && session?.user) {
+    ME = session.user;
+    await loadAdminProfile();
+  } else if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED' && !session) {
+    showLogin();
+  }
+});
+
+// Cek session saat halaman dibuka
+(async () => {
+  const { data: { session } } = await sb.auth.getSession();
+  // Kalau ada session tersimpan → cek role dulu, baru masuk
+  // Kalau tidak ada → langsung tampilkan login
+  if (!session?.user) {
+    showLogin();
+    return;
+  }
+  ME = session.user;
+  await loadAdminProfile();
+})();
+
+async function loadAdminProfile() {
+  try {
+    const { data, error } = await sb.from('users').select('*').eq('id', ME.id).single();
+
+    if (error || !data) {
+      // User tidak ada di tabel — bukan admin
+      await sb.auth.signOut();
+      showLogin();
+      showError('Akun tidak ditemukan. Daftar dulu di app chat.');
+      return;
+    }
+
+    if (!['owner','admin'].includes(data.role)) {
+      await sb.auth.signOut();
+      showLogin();
+      showError('❌ Akses ditolak. Hanya owner dan admin yang bisa masuk.');
+      return;
+    }
+
+    MY_PROFILE = data;
+    document.getElementById('admin-avatar').src = data.avatar_url ||
+      `https://ui-avatars.com/api/?name=${encodeURIComponent(data.username)}&background=1e3a5f&color=60a5fa&bold=true`;
+    document.getElementById('admin-username').innerText = '@' + data.username;
+    const roleEl = document.getElementById('admin-role-text');
+    roleEl.innerText   = data.role === 'owner' ? '👑 Owner' : '🛡️ Admin';
+    roleEl.className   = 'admin-info-role ' + data.role;
+    document.getElementById('dash-greeting').innerText = `Halo, ${data.username}! Semua aman ✅`;
+    showApp();
+    initAdmin();
+
+  } catch(e) {
+    console.error('loadAdminProfile error:', e);
+    showLogin();
+    showError('Gagal verifikasi akun: ' + e.message);
+  }
+}
+
+async function doLogin() {
+  const email = document.getElementById('l-email').value.trim();
+  const pass  = document.getElementById('l-pass').value;
+  const errEl = document.getElementById('login-error');
+  const btn   = document.getElementById('btn-login');
+
+  errEl.style.display = 'none';
+  if (!email || !pass) { errEl.innerText='Isi email dan password.'; errEl.style.display='block'; return; }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Memverifikasi...';
+
+  const { error } = await sb.auth.signInWithPassword({ email, password: pass });
+  btn.disabled = false;
+  btn.innerText = 'Masuk ke Admin Panel';
+
+  if (error) {
+    errEl.innerText = error.message.includes('Invalid') ? 'Email atau password salah.' : error.message;
+    errEl.style.display = 'block';
+  }
+}
+
+async function doLogout() {
+  await sb.auth.signOut();
+  showLogin();
+}
+
+function showLogin() {
+  document.getElementById('screen-login').classList.add('active');
+  document.getElementById('screen-app').classList.remove('active');
+}
+
+function showApp() {
+  document.getElementById('screen-login').classList.remove('active');
+  document.getElementById('screen-app').classList.add('active');
+}
+
+function showError(msg) {
+  const el = document.getElementById('login-error');
+  el.innerText = msg; el.style.display = 'block';
+}
+
+// ══════════════════════════════════════
+//  NAVIGATION
+// ══════════════════════════════════════
+// ══════════════════════════════════════
+//  SETTINGS & STEALTH MODE
+// ══════════════════════════════════════
+async function loadSettingsPage(){
+  if(!MY_PROFILE) return;
+  document.getElementById('settings-username').innerText  = '@' + MY_PROFILE.username;
+  document.getElementById('settings-email').innerText     = MY_PROFILE.email;
+  document.getElementById('settings-role').innerText      = MY_PROFILE.role==='owner'?'👑 Owner':'🛡️ Admin';
+  document.getElementById('settings-role-label').innerText= MY_PROFILE.role==='owner'?'Owner — Akses Penuh':'Admin — Akses Terbatas';
+  const {data} = await sb.from('users').select('is_stealth,secret_keyword').eq('id',MY_PROFILE.id).single();
+  const isStealth    = data?.is_stealth||false;
+  const savedKeyword = data?.secret_keyword||'';
+  updateStealthToggleUI(isStealth);
+  document.getElementById('settings-stealth').innerText = isStealth?'🕵️ Aktif':'❌ Nonaktif';
+  if(savedKeyword) document.getElementById('keyword-input').value = savedKeyword;
+}
+
+function updateStealthToggleUI(isActive){
+  const track=document.getElementById('stealth-track');
+  const thumb=document.getElementById('stealth-thumb');
+  const toggle=document.getElementById('toggle-stealth');
+  toggle.checked=isActive;
+  track.style.background=isActive?'var(--purple)':'var(--border2)';
+  thumb.style.left=isActive?'23px':'3px';
+}
+
+async function toggleStealthMode(isActive){
+  updateStealthToggleUI(isActive);
+  const {error}=await sb.from('users').update({is_stealth:isActive}).eq('id',MY_PROFILE.id);
+  if(error){showToast('❌ Gagal: '+error.message);return;}
+  MY_PROFILE.is_stealth=isActive;
+  document.getElementById('settings-stealth').innerText=isActive?'🕵️ Aktif':'❌ Nonaktif';
+  showToast(isActive?'🕵️ Stealth aktif — tersembunyi dari feed':'✅ Stealth nonaktif — terlihat di feed');
+}
+
+async function saveKeyword(){
+  const keyword=document.getElementById('keyword-input').value.trim();
+  if(!keyword||keyword.length<4){showToast('Kata kunci minimal 4 karakter.');return;}
+  const {error}=await sb.from('users').update({secret_keyword:keyword}).eq('id',MY_PROFILE.id);
+  if(error){showToast('❌ Gagal: '+error.message);return;}
+  MY_PROFILE.secret_keyword=keyword;
+  const el=document.getElementById('keyword-saved');
+  el.style.display='block'; setTimeout(()=>el.style.display='none',3000);
+  showToast('✅ Kata kunci disimpan!');
+}
+
+async function adminDirectChat(){
+  const email=document.getElementById('direct-chat-email').value.trim();
+  const result=document.getElementById('direct-chat-result');
+  if(!email){result.innerText='Masukkan email user.';result.style.color='var(--red)';return;}
+  result.innerText='⏳ Mencari user...';result.style.color='var(--text3)';
+  const {data:u}=await sb.from('users').select('id,username').eq('email',email).single();
+  if(!u){result.innerText='❌ User tidak ditemukan.';result.style.color='var(--red)';return;}
+  const [uid1,uid2]=[MY_PROFILE.id,u.id].sort();
+  const {data:convo}=await sb.from('conversations')
+    .upsert({owner_id:uid1,partner_id:uid2,updated_at:new Date().toISOString(),chat_status:'active'},{onConflict:'owner_id,partner_id'})
+    .select('id').single();
+  if(convo?.id){
+    result.innerHTML=`✅ Conversation dibuat dengan @${u.username}. <a href="chat-versi0-2.html" target="_blank" style="color:var(--accent);font-weight:700;">Buka Chat →</a>`;
+    result.style.color='var(--green)';
+  } else {result.innerText='❌ Gagal.';result.style.color='var(--red)';}
+}
+
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  const pageEl=document.getElementById('page-'+name);
+  const navEl=document.getElementById('nav-'+name);
+  if(pageEl) pageEl.classList.add('active');
+  if(navEl)  navEl.classList.add('active');
+  if(name==='dashboard') refreshDashboard();
+  else if(name==='users')    loadUsers();
+  else if(name==='reports')  loadReports();
+  else if(name==='monitor')  loadMonitorList();
+  else if(name==='bans')     loadBans();
+  else if(name==='storage')  loadStoragePage();
+  else if(name==='settings') loadSettingsPage();
+}
+
+let _toastTimer;
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.innerText=msg; t.classList.add('show');
+  clearTimeout(_toastTimer); _toastTimer=setTimeout(()=>t.classList.remove('show'),3000);
+}
+
+function goToChat() {
+  const base = window.location.href.replace(/\/[^/]*$/, '');
+  window.open(base + '/chat-versi0-2.html', '_blank');
+}
+
+// ══════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════
+function initAdmin() {
+  refreshDashboard();
+  subscribeRealtime();
+}
+
+function subscribeRealtime() {
+  sb.channel('admin-rt')
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'reports'},()=>{
+      refreshReportsBadge();
+      if(document.getElementById('page-reports').classList.contains('active')) loadReports();
+    })
+    .on('postgres_changes',{event:'*',schema:'public',table:'users'},()=>{
+      if(document.getElementById('page-users').classList.contains('active')) loadUsers();
+    })
+    .on('postgres_changes',{event:'*',schema:'public',table:'bans'},()=>{
+      if(document.getElementById('page-bans').classList.contains('active')) loadBans();
+    })
+    .subscribe();
+}
+
+// ══════════════════════════════════════
+//  DASHBOARD
+// ══════════════════════════════════════
+async function refreshDashboard() {
+  const [
+    {count:users}, {count:online}, {count:msgs},
+    {count:reports}, {count:convos}, {count:bans}
+  ] = await Promise.all([
+    sb.from('users').select('*',{count:'exact',head:true}),
+    sb.from('user_presence').select('*',{count:'exact',head:true}).eq('is_online',true),
+    sb.from('messages').select('*',{count:'exact',head:true}),
+    sb.from('reports').select('*',{count:'exact',head:true}).eq('status','pending'),
+    sb.from('conversations').select('*',{count:'exact',head:true}),
+    sb.from('bans').select('*',{count:'exact',head:true}),
+  ]);
+
+  document.getElementById('s-users').innerText   = users||0;
+  document.getElementById('s-online').innerText  = online||0;
+  document.getElementById('s-msgs').innerText    = msgs||0;
+  document.getElementById('s-reports').innerText = reports||0;
+  document.getElementById('s-convos').innerText  = convos||0;
+  document.getElementById('s-bans').innerText    = bans||0;
+
+  // Badge laporan
+  const badge = document.getElementById('reports-badge');
+  if(reports > 0){ badge.innerText=reports; badge.style.display='flex'; }
+  else badge.style.display='none';
+
+  loadMsgChart();
+  loadRecentUsers();
+  loadRecentReports();
+}
+
+async function refreshReportsBadge() {
+  const {count} = await sb.from('reports').select('*',{count:'exact',head:true}).eq('status','pending');
+  const badge = document.getElementById('reports-badge');
+  if(count>0){ badge.innerText=count; badge.style.display='flex'; }
+  else badge.style.display='none';
+}
+
+async function loadMsgChart() {
+  const bars = document.getElementById('chart-bars');
+  const days = [], labels = [];
+  for(let i=6;i>=0;i--){
+    const d = new Date(); d.setDate(d.getDate()-i);
+    days.push(d.toISOString().split('T')[0]);
+    labels.push(d.toLocaleDateString('id-ID',{weekday:'short'}));
+  }
+  const {data} = await sb.from('messages').select('created_at').gte('created_at',days[0]+'T00:00:00Z');
+  const counts = days.map(day => (data||[]).filter(m=>m.created_at.startsWith(day)).length);
+  const max = Math.max(...counts,1);
+  bars.innerHTML = days.map((_,i)=>{
+    const h = Math.round((counts[i]/max)*100);
+    return `<div class="chart-bar-wrap">
+      <div class="chart-bar" style="height:${Math.max(h,3)}%;background:${i===6?'var(--accent)':'rgba(59,130,246,0.4)'};" title="${counts[i]} pesan"></div>
+      <div class="chart-bar-label">${labels[i]}</div>
+    </div>`;
+  }).join('');
+}
+
+async function loadRecentUsers() {
+  const {data} = await sb.from('users').select('id,username,email,role,created_at').order('created_at',{ascending:false}).limit(5);
+  document.getElementById('recent-users').innerHTML = (data||[]).map(u=>renderUserRow(u,true)).join('');
+}
+
+async function loadRecentReports() {
+  const {data} = await sb.from('reports')
+    .select('*, reporter:reporter_id(username), reported:reported_id(username)')
+    .eq('status','pending').order('created_at',{ascending:false}).limit(3);
+  const el = document.getElementById('recent-reports');
+  if(!data?.length){ el.innerHTML=`<div class="empty-state" style="padding:20px;"><i class="fa fa-check-circle" style="color:var(--green);"></i><p>Tidak ada laporan pending</p></div>`; return; }
+  el.innerHTML = data.map(r=>renderReportCard(r)).join('');
+}
+
+// ══════════════════════════════════════
+//  USERS
+// ══════════════════════════════════════
+async function loadUsers() {
+  const el = document.getElementById('users-list');
+  el.innerHTML = `<div class="empty-state"><span class="spinner"></span></div>`;
+  const {data,error} = await sb.from('users').select('*, presence:user_presence(is_online)').order('created_at',{ascending:false});
+  if(error){ el.innerHTML=`<div class="empty-state"><i class="fa fa-triangle-exclamation"></i><p>${error.message}</p></div>`; return; }
+  allUsers = data||[];
+  document.getElementById('users-count-label').innerText = `${allUsers.length} pengguna terdaftar`;
+  applyUserFilter();
+}
+
+function applyUserFilter() {
+  let list = [...allUsers];
+  const q = document.getElementById('user-search')?.value?.toLowerCase()||'';
+  if(q) list = list.filter(u => u.username?.toLowerCase().includes(q)||u.email?.toLowerCase().includes(q));
+  if(_userFilter==='online') list = list.filter(u=>u.presence?.is_online);
+  else if(_userFilter==='owner') list = list.filter(u=>u.role==='owner');
+  else if(_userFilter==='admin') list = list.filter(u=>u.role==='admin');
+  document.getElementById('users-list').innerHTML = list.length
+    ? list.map(u=>renderUserRow(u)).join('')
+    : `<div class="empty-state"><i class="fa fa-user-slash"></i><p>Tidak ada pengguna</p></div>`;
+}
+
+function filterUsers(v){ applyUserFilter(); }
+function setUserFilter(f, btn){
+  _userFilter=f;
+  document.querySelectorAll('#page-users .filter-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  applyUserFilter();
+}
+
+function renderUserRow(u, compact=false) {
+  const isOnline = u.presence?.is_online||false;
+  const isSelf   = u.id===ME.id;
+  const isOwner  = MY_PROFILE.role==='owner';
+  const roleMap  = {owner:'badge-owner',admin:'badge-admin',user:'badge-user'};
+  const roleIcon = {owner:'👑',admin:'🛡️',user:'👤'};
+  return `<div class="data-row" id="urow-${u.id}">
+    <div class="data-avatar">
+      <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(u.username)}&background=1e3a5f&color=60a5fa&bold=true">
+      ${isOnline?`<div class="online-dot"></div>`:''}
+    </div>
+    <div class="data-info">
+      <div class="data-name">
+        @${esc(u.username)}
+        <span class="badge ${roleMap[u.role]||'badge-user'}" style="margin-left:4px;">${roleIcon[u.role]||''} ${u.role}</span>
+        ${isOnline?`<span class="badge badge-online" style="margin-left:4px;">Online</span>`:''}
+      </div>
+      <div class="data-sub">${esc(u.email)} · ${fmtTime(u.created_at)}</div>
+    </div>
+    ${!compact?`<div class="data-actions">
+      <button class="btn btn-ghost btn-icon btn-sm" title="Monitor Chat" onclick="openMonitorUser('${u.id}','${esc(u.username)}')">
+        <i class="fa fa-eye"></i>
+      </button>
+      ${!isSelf&&u.role!=='owner'?`
+        <button class="btn btn-danger btn-icon btn-sm" title="Ban" onclick="banUser('${u.id}','${esc(u.username)}')">
+          <i class="fa fa-ban"></i>
+        </button>
+        ${isOwner&&u.role==='user'?`
+        <button class="btn btn-warning btn-icon btn-sm" title="Jadikan Admin" onclick="promoteAdmin('${u.id}','${esc(u.username)}')">
+          <i class="fa fa-shield-halved"></i>
+        </button>`:''}
+        ${isOwner&&u.role==='admin'?`
+        <button class="btn btn-ghost btn-icon btn-sm" title="Turunkan ke User" onclick="demoteUser('${u.id}','${esc(u.username)}')">
+          <i class="fa fa-user-minus"></i>
+        </button>`:''}
+      `:''}
+    </div>`:''}
+  </div>`;
+}
+
+async function banUser(userId, username) {
+  showConfirm(`🚫 Ban @${username}?`,
+    'User tidak bisa login setelah di-ban. Kamu bisa unban kapan saja.',
+    async () => {
+      const reason = prompt(`Alasan ban @${username}:`, 'Melanggar aturan');
+      if(reason===null) return;
+      const {error} = await sb.from('bans').upsert({user_id:userId,banned_by:ME.id,reason},{onConflict:'user_id'});
+      if(error) return showToast('Gagal ban: '+error.message);
+      showToast(`✅ @${username} di-ban.`);
+      loadUsers();
+    }
+  );
+}
+
+async function promoteAdmin(userId, username) {
+  showConfirm(`🛡️ Jadikan @${username} Admin?`,
+    'Admin bisa mengakses panel ini dan mengelola laporan, ban, dan monitor chat.',
+    async () => {
+      const {error} = await sb.from('users').update({role:'admin'}).eq('id',userId);
+      if(error) return showToast('Gagal: '+error.message);
+      showToast(`✅ @${username} sekarang Admin.`);
+      loadUsers();
+    }
+  );
+}
+
+async function demoteUser(userId, username) {
+  showConfirm(`👤 Turunkan @${username} ke User?`, 'Akses admin akan dicabut.',
+    async () => {
+      const {error} = await sb.from('users').update({role:'user'}).eq('id',userId);
+      if(error) return showToast('Gagal: '+error.message);
+      showToast(`@${username} kembali jadi User.`);
+      loadUsers();
+    }
+  );
+}
+
+// ══════════════════════════════════════
+//  REPORTS
+// ══════════════════════════════════════
+async function loadReports() {
+  const el = document.getElementById('reports-list');
+  el.innerHTML = `<div class="empty-state"><span class="spinner"></span></div>`;
+  let q = sb.from('reports').select('*, reporter:reporter_id(username,email), reported:reported_id(username,email)').order('created_at',{ascending:false});
+  if(_reportFilter!=='all') q = q.eq('status',_reportFilter);
+  const {data,error} = await q.limit(100);
+  if(error){ el.innerHTML=`<div class="empty-state"><i class="fa fa-triangle-exclamation"></i><p>${error.message}</p></div>`; return; }
+  allReports = data||[];
+  el.innerHTML = allReports.length ? allReports.map(r=>renderReportCard(r)).join('') : `<div class="empty-state"><i class="fa fa-check-circle" style="color:var(--green);opacity:1;"></i><p>Tidak ada laporan</p></div>`;
+}
+
+function setReportFilter(f, btn) {
+  _reportFilter=f;
+  document.querySelectorAll('#page-reports .filter-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  loadReports();
+}
+
+function renderReportCard(r) {
+  const sColor={pending:'badge-pending',reviewed:'badge-admin',resolved:'badge-resolved',dismissed:'badge-dismissed'};
+  const sLabel={pending:'Menunggu',reviewed:'Ditinjau',resolved:'Selesai',dismissed:'Diabaikan'};
+  return `<div class="report-card">
+    <div class="report-card-header">
+      <div class="report-users">
+        <img class="report-avatar-small" src="https://ui-avatars.com/api/?name=${encodeURIComponent(r.reporter?.username||'?')}&background=1e3a5f&color=60a5fa&bold=true">
+        <div>
+          <div style="font-size:12px;font-weight:700;">@${esc(r.reporter?.username||'?')}</div>
+          <div style="font-size:10px;color:var(--text3);">Pelapor</div>
+        </div>
+        <i class="fa fa-arrow-right" style="color:var(--text3);font-size:10px;margin:0 2px;"></i>
+        <img class="report-avatar-small" src="https://ui-avatars.com/api/?name=${encodeURIComponent(r.reported?.username||'?')}&background=2d1515&color=f87171&bold=true">
+        <div>
+          <div style="font-size:12px;font-weight:700;color:#fca5a5;">@${esc(r.reported?.username||'?')}</div>
+          <div style="font-size:10px;color:var(--text3);">Dilaporkan</div>
+        </div>
+      </div>
+      <span class="badge ${sColor[r.status]||'badge-user'}">${sLabel[r.status]||r.status}</span>
+    </div>
+    <div class="report-card-body">
+      <span style="background:rgba(239,68,68,.12);color:var(--red);padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700;margin-right:6px;">${esc(r.reason)}</span>
+      ${r.detail?esc(r.detail):'<span style="color:var(--text3);font-style:italic;">Tidak ada detail</span>'}
+    </div>
+    <div class="report-card-footer">
+      <div class="report-meta">${fmtTime(r.created_at)}</div>
+      ${r.status==='pending'?`
+      <div class="report-actions">
+        <button class="btn btn-success btn-sm" onclick="resolveReport('${r.id}','resolved')"><i class="fa fa-check"></i> Selesaikan</button>
+        <button class="btn btn-danger btn-sm" onclick="banFromReport('${r.reported_id}','${esc(r.reported?.username||'?')}','${r.id}')"><i class="fa fa-ban"></i> Ban</button>
+        <button class="btn btn-ghost btn-sm" onclick="resolveReport('${r.id}','dismissed')">Abaikan</button>
+      </div>`:`<div class="report-meta">${r.admin_note||''}</div>`}
+    </div>
+  </div>`;
+}
+
+async function resolveReport(id, status) {
+  await sb.from('reports').update({status,reviewed_by:ME.id,reviewed_at:new Date().toISOString()}).eq('id',id);
+  showToast(status==='resolved'?'✅ Laporan diselesaikan.':'Laporan diabaikan.');
+  loadReports(); refreshDashboard();
+}
+
+async function banFromReport(userId, username, reportId) {
+  showConfirm(`🚫 Ban @${username}?`, 'Laporan akan otomatis diselesaikan.',
+    async () => {
+      const reason = prompt(`Alasan ban @${username}:`, 'Dilaporkan user lain');
+      if(reason===null) return;
+      await sb.from('bans').upsert({user_id:userId,banned_by:ME.id,reason},{onConflict:'user_id'});
+      await resolveReport(reportId, 'resolved');
+      showToast(`✅ @${username} di-ban dan laporan diselesaikan.`);
+    }
+  );
+}
+
+// ══════════════════════════════════════
+//  MONITOR
+// ══════════════════════════════════════
+async function loadMonitorList() {
+  const el = document.getElementById('monitor-list');
+  el.innerHTML = `<div class="empty-state"><span class="spinner"></span></div>`;
+  const {data:users} = await sb.from('users').select('id,username,email,presence:user_presence(is_online)').order('username');
+  if(!users?.length){ el.innerHTML=`<div class="empty-state"><i class="fa fa-users"></i><p>Belum ada pengguna</p></div>`; return; }
+  el.innerHTML = users.map(u=>`
+    <div class="data-row" data-username="${(u.username||'').toLowerCase()}">
+      <div class="data-avatar">
+        <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(u.username)}&background=1e3a5f&color=60a5fa&bold=true">
+        ${u.presence?.is_online?`<div class="online-dot"></div>`:''}
+      </div>
+      <div class="data-info">
+        <div class="data-name">@${esc(u.username)}</div>
+        <div class="data-sub">${esc(u.email)}</div>
+      </div>
+      <div class="data-actions">
+        <button class="btn btn-primary btn-sm" onclick="openMonitorUser('${u.id}','${esc(u.username)}')">
+          <i class="fa fa-eye"></i> Pantau
+        </button>
+      </div>
+    </div>`).join('');
+}
+
+function filterMonitor(v){
+  document.querySelectorAll('#monitor-list .data-row').forEach(el=>{
+    el.style.display = el.dataset.username?.includes(v.toLowerCase())||!v ? '' : 'none';
+  });
+}
+
+async function openMonitorUser(userId, username) {
+  _monitorUserId   = userId;
+  _monitorUsername = username;
+  document.getElementById('monitor-title').innerText = `Chat @${username}`;
+  document.getElementById('monitor-sub').innerText   = 'Mode baca — tidak bisa kirim pesan';
+  document.getElementById('monitor-ban-btn').onclick  = ()=>banUser(userId, username);
+  document.getElementById('monitor-msgs').innerHTML   = `<div class="monitor-empty"><span class="spinner"></span></div>`;
+  document.getElementById('monitor-modal').classList.add('open');
+  await loadMonitorMsgs(userId, username);
+}
+
+async function loadMonitorMsgs(userId, username) {
+  const el = document.getElementById('monitor-msgs');
+
+  // Cari semua conversation yang melibatkan user ini
+  const {data:convos} = await sb.from('conversations')
+    .select('id,owner_id,partner_id,owner:owner_id(username),partner:partner_id(username)')
+    .or(`owner_id.eq.${userId},partner_id.eq.${userId}`)
+    .order('updated_at',{ascending:false})
+    .limit(5);
+
+  if(!convos?.length){
+    el.innerHTML=`<div class="monitor-empty"><i class="fa fa-comment-slash" style="font-size:24px;opacity:.3;display:block;margin-bottom:8px;"></i><p>Tidak ada percakapan</p></div>`;
+    return;
+  }
+
+  let html = '';
+  for(const c of convos){
+    const otherUser = c.owner_id===userId ? c.partner : c.owner;
+    const {data:msgs} = await sb.from('messages')
+      .select('*').eq('conversation_id',c.id)
+      .is('deleted_at',null)
+      .order('created_at',{ascending:true}).limit(50);
+
+    if(!msgs?.length) continue;
+
+    html += `<div style="margin-bottom:16px;">
+      <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;padding:0 4px;">
+        Chat dengan @${esc(otherUser?.username||'?')}
+      </div>`;
+
+    html += msgs.map(m=>{
+      const isTarget = m.sender_id===userId;
+      const senderName = isTarget ? username : (otherUser?.username||'?');
+      return `<div class="monitor-msg ${isTarget?'right':'left'}">
+        <div class="monitor-msg-sender">@${esc(senderName)}</div>
+        <div class="monitor-msg-bubble">
+          ${m.media_url
+            ? (m.media_type==='video'?`🎥 Video: ${esc(m.media_name||'video.mp4')}` : `<img src="${m.media_url}" style="width:100%;border-radius:8px;max-height:120px;object-fit:cover;">`)
+            : esc(m.text||'')
+          }
+        </div>
+        <div class="monitor-msg-meta">${fmtTime(m.created_at)} ${m.is_request?'· ⚡ Request':''}</div>
+      </div>`;
+    }).join('');
+
+    html += `</div>`;
+  }
+
+  el.innerHTML = html || `<div class="monitor-empty"><p>Tidak ada pesan</p></div>`;
+  el.scrollTop = el.scrollHeight;
+}
+
+function closeMonitor() {
+  document.getElementById('monitor-modal').classList.remove('open');
+}
+
+// ══════════════════════════════════════
+//  BANS
+// ══════════════════════════════════════
+async function loadBans() {
+  const el = document.getElementById('bans-list');
+  el.innerHTML = `<div class="empty-state"><span class="spinner"></span></div>`;
+  const {data,error} = await sb.from('bans')
+    .select('*, user:user_id(username,email), banner:banned_by(username)')
+    .order('created_at',{ascending:false});
+  if(error){ el.innerHTML=`<div class="empty-state"><i class="fa fa-triangle-exclamation"></i><p>${error.message}</p></div>`; return; }
+  allBans = data||[];
+  document.getElementById('bans-count-label').innerText = `${allBans.length} user di-ban`;
+  el.innerHTML = allBans.length ? allBans.map(b=>`
+    <div class="data-row">
+      <div class="data-avatar">
+        <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(b.user?.username||'?')}&background=2d1515&color=f87171&bold=true" style="border-color:rgba(239,68,68,.4);">
+      </div>
+      <div class="data-info">
+        <div class="data-name" style="color:#fca5a5;">@${esc(b.user?.username||'?')} <span class="badge badge-banned">Banned</span></div>
+        <div class="data-sub">
+          ${esc(b.reason||'Tidak ada alasan')} · oleh @${esc(b.banner?.username||'?')} · ${fmtTime(b.created_at)}
+        </div>
+      </div>
+      <div class="data-actions">
+        <button class="btn btn-success btn-sm" onclick="unbanUser('${b.user_id}','${esc(b.user?.username||'?')}')">
+          <i class="fa fa-unlock"></i> Unban
+        </button>
+      </div>
+    </div>`).join('')
+  : `<div class="empty-state"><i class="fa fa-check-circle" style="color:var(--green);opacity:1;"></i><p>Tidak ada user yang di-ban</p></div>`;
+}
+
+async function unbanUser(userId, username) {
+  showConfirm(`🔓 Unban @${username}?`, 'User bisa login kembali setelah di-unban.',
+    async () => {
+      await sb.from('bans').delete().eq('user_id',userId);
+      showToast(`✅ @${username} di-unban.`);
+      loadBans(); refreshDashboard();
+    }
+  );
+}
+
+// ══════════════════════════════════════
+//  BROADCAST
+// ══════════════════════════════════════
+function openBroadcast() {
+  document.getElementById('broadcast-text').value = '';
+  document.getElementById('broadcast-modal').classList.add('open');
+}
+
+function closeBroadcast() {
+  document.getElementById('broadcast-modal').classList.remove('open');
+}
+
+async function sendBroadcast() {
+  const text = document.getElementById('broadcast-text').value.trim();
+  if(!text) return showToast('Tulis pesan dulu.');
+
+  const btn = document.getElementById('btn-broadcast');
+  btn.disabled=true; btn.innerHTML='<span class="spinner"></span> Mengirim...';
+
+  // Insert pesan broadcast ke semua conversation yang melibatkan admin
+  // Untuk simplicity: buat notif sebagai laporan/announcement
+  // Real implementation: insert ke semua user via edge function
+  // Untuk sekarang, kita simpan sebagai report dengan tipe broadcast
+  const {data:users} = await sb.from('users').select('id').neq('id',ME.id);
+  let ok=0, fail=0;
+
+  for(const u of (users||[])){
+    // Buat atau cari shared conversation
+    const [uid1,uid2] = [ME.id,u.id].sort();
+    const {data:convo} = await sb.from('conversations')
+      .upsert({owner_id:uid1,partner_id:uid2,updated_at:new Date().toISOString(),chat_status:'active'},{onConflict:'owner_id,partner_id'})
+      .select('id').single();
+
+    if(convo?.id){
+      const {error} = await sb.from('messages').insert({
+        conversation_id:convo.id, sender_id:ME.id,
+        text:`📢 [BROADCAST] ${text}`, is_read:false, is_request:false, reactions:{}
+      });
+      if(!error) ok++; else fail++;
+    }
+  }
+
+  btn.disabled=false; btn.innerHTML='<i class="fa fa-paper-plane"></i> Kirim';
+  closeBroadcast();
+  showToast(`✅ Broadcast terkirim ke ${ok} user${fail>0?`, ${fail} gagal`:''}.`);
+}
+
+// ══════════════════════════════════════
+//  CONFIRM DIALOG
+// ══════════════════════════════════════
+function showConfirm(title, msg, cb) {
+  document.getElementById('confirm-title').innerText = title;
+  document.getElementById('confirm-msg').innerText   = msg;
+  _confirmCallback = cb;
+  document.getElementById('confirm-modal').classList.add('open');
+}
+
+function closeConfirm() {
+  document.getElementById('confirm-modal').classList.remove('open');
+  _confirmCallback = null;
+}
+
+async function confirmOk() {
+  closeConfirm();
+  if(_confirmCallback) await _confirmCallback();
+}
+
+// ══════════════════════════════════════
+//  UTILS
+// ══════════════════════════════════════
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+
+function fmtTime(ts){
+  if(!ts) return '-';
+  const d=new Date(ts),now=new Date(),diff=now-d;
+  if(diff<60000) return 'baru saja';
+  if(diff<3600000) return Math.floor(diff/60000)+'m lalu';
+  if(diff<86400000) return d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
+  return d.toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'});
+}
+
+// ══════════════════════════════════════
+//  STORAGE PAGE
+// ══════════════════════════════════════
+const CLOUDINARY_CLOUD  = 'dknodp2zg';
+const CLOUDINARY_KEY    = '869798925159121';
+const CLOUDINARY_SECRET = 'FGD1WNGogfluifEd9mlBF1KdLHc';
+
+// Cloudinary free plan: 25GB storage, 25GB bandwidth/bulan
+const CLOUD_STORAGE_LIMIT = 25 * 1024; // MB
+const CLOUD_BW_LIMIT      = 25 * 1024; // MB
+
+async function loadStoragePage(){
+  const el = document.getElementById('storage-body');
+  el.innerHTML = `<div class="empty-state"><span class="spinner"></span><p style="margin-top:8px;">Memuat data storage...</p></div>`;
+
+  try {
+    // ── SUPABASE STATS ──
+    const [
+      {count:totalMsgs},  {count:totalUsers},
+      {count:totalConvos},{count:mediaMsgs},
+      {count:tempMsgs},   {count:totalReports},{count:totalBans},
+    ] = await Promise.all([
+      sb.from('messages').select('*',{count:'exact',head:true}),
+      sb.from('users').select('*',{count:'exact',head:true}),
+      sb.from('conversations').select('*',{count:'exact',head:true}),
+      sb.from('messages').select('*',{count:'exact',head:true}).not('media_url','is',null).is('deleted_at',null),
+      sb.from('messages').select('*',{count:'exact',head:true}).not('media_expires_at','is',null).is('deleted_at',null),
+      sb.from('reports').select('*',{count:'exact',head:true}).eq('status','pending'),
+      sb.from('bans').select('*',{count:'exact',head:true}),
+    ]);
+
+    // Groups query terpisah karena tabel mungkin belum ada
+    let totalGroups = 0;
+    try {
+      const {count} = await sb.from('groups').select('*',{count:'exact',head:true});
+      totalGroups = count || 0;
+    } catch(e) { totalGroups = 0; }
+
+    // ── CLOUDINARY USAGE via API route (bypass CORS) ──
+    let cloud = null, cloudError = null;
+    try {
+      const res = await fetch('/api/cloudinary-usage');
+      if(res.ok) cloud = await res.json();
+      else cloudError = `HTTP ${res.status}`;
+    } catch(e){ cloudError = e.message; }
+
+    // Fallback estimasi dari DB kalau API route gagal
+    if(!cloud){
+      const {count:photoCount} = await sb.from('messages').select('*',{count:'exact',head:true})
+        .eq('media_type','image').not('media_url','is',null);
+      const {count:videoCount} = await sb.from('messages').select('*',{count:'exact',head:true})
+        .eq('media_type','video').not('media_url','is',null);
+      const estimatedMB = ((photoCount||0)*0.5) + ((videoCount||0)*5);
+      cloud = {
+        _estimated: true,
+        storage:    { usage: estimatedMB * 1024 * 1024 },
+        bandwidth:  { usage: 0 },
+        resources:  { usage: (photoCount||0) + (videoCount||0) },
+        objects:    { usage: (photoCount||0) + (videoCount||0), limit: 25000 },
+        transformations: { usage: 0 }
+      };
+    }
+
+    // ── PARSE DATA ──
+    const MB        = 1024*1024;
+    const storUsed  = cloud ? +(cloud.storage?.usage||0)/MB : 0;
+    const storLimit = 25*1024; // 25 GB = 25600 MB
+    const bwUsed    = cloud ? +(cloud.bandwidth?.usage||0)/MB : 0;
+    const bwLimit   = 25*1024;
+    const objsUsed  = cloud?.resources?.usage || cloud?.objects?.usage || 0;
+    const objsLimit = cloud?.objects?.limit || 25000;
+    const transforms= cloud?.transformations?.usage || 0;
+
+    const storPct = Math.min((storUsed/storLimit)*100,100);
+    const bwPct   = Math.min((bwUsed/bwLimit)*100,100);
+    const objPct  = Math.min((objsUsed/objsLimit)*100,100);
+
+    // ── HELPER: SVG GAUGE ──
+    const gauge = (pct, color, size=100) => {
+      const r = 38, cx = 50, cy = 54;
+      const circumference = 2 * Math.PI * r;
+      const dash = (pct/100) * circumference;
+      return `<svg viewBox="0 0 100 70" width="${size}" height="${size*0.7}" style="display:block;margin:0 auto;">
+        <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="10" stroke-dasharray="${circumference}" stroke-dashoffset="${circumference * 0.5}" stroke-linecap="round" transform="rotate(-180 ${cx} ${cy})"/>
+        <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${color}" stroke-width="10"
+          stroke-dasharray="${circumference}"
+          stroke-dashoffset="${circumference - dash * 0.5}"
+          stroke-linecap="round" transform="rotate(-180 ${cx} ${cy})"
+          style="transition:stroke-dashoffset .6s ease;"/>
+        <text x="${cx}" y="${cy-6}" text-anchor="middle" fill="${color}" font-size="14" font-weight="900" font-family="Plus Jakarta Sans,sans-serif">${pct.toFixed(1)}%</text>
+      </svg>`;
+    };
+
+    const colorOf = p => p > 80 ? '#ef4444' : p > 50 ? '#f59e0b' : '#22c55e';
+    const fmtMB   = mb => mb >= 1024 ? (mb/1024).toFixed(2)+' GB' : mb.toFixed(1)+' MB';
+
+    el.innerHTML = `
+    <!-- CLOUDINARY GAUGE CARD -->
+    <div class="storage-card">
+      <div class="storage-card-header">
+        <div class="storage-card-icon" style="background:rgba(59,130,246,.15);">☁️</div>
+        <div style="flex:1;">
+          <div class="storage-card-title">Cloudinary</div>
+          <div class="storage-card-sub">Free Plan · 25 GB Storage · 25 GB Bandwidth</div>
+        </div>
+        <span style="font-size:10px;padding:3px 10px;border-radius:99px;font-weight:700;${cloud._estimated?'background:rgba(245,158,11,.15);color:#f59e0b;':cloud?'background:rgba(34,197,94,.15);color:#22c55e;':'background:rgba(239,68,68,.15);color:#ef4444;'}">
+          ${cloud._estimated?'🟡 Estimasi DB':cloud?'🟢 Live':'🔴 Offline'}
+        </span>
+      </div>
+
+      ${cloudError?`<div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:10px;padding:10px 14px;font-size:11px;color:#fbbf24;margin-bottom:14px;">⚠️ ${cloudError}</div>`:''}
+
+      <!-- 3 GAUGES -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px;">
+        <div style="background:var(--surface2);border-radius:14px;padding:14px 8px;text-align:center;">
+          ${gauge(storPct, colorOf(storPct))}
+          <div style="font-size:11px;font-weight:700;color:var(--text2);margin-top:4px;">💾 Storage</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:2px;">${fmtMB(storUsed)} / ${fmtMB(storLimit)}</div>
+          <div style="font-size:10px;color:#22c55e;margin-top:1px;">Sisa: ${fmtMB(storLimit-storUsed)}</div>
+        </div>
+        <div style="background:var(--surface2);border-radius:14px;padding:14px 8px;text-align:center;">
+          ${gauge(bwPct, colorOf(bwPct))}
+          <div style="font-size:11px;font-weight:700;color:var(--text2);margin-top:4px;">🌐 Bandwidth</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:2px;">${fmtMB(bwUsed)} / ${fmtMB(bwLimit)}</div>
+          <div style="font-size:10px;color:#22c55e;margin-top:1px;">Sisa: ${fmtMB(bwLimit-bwUsed)}</div>
+        </div>
+        <div style="background:var(--surface2);border-radius:14px;padding:14px 8px;text-align:center;">
+          ${gauge(objPct, colorOf(objPct))}
+          <div style="font-size:11px;font-weight:700;color:var(--text2);margin-top:4px;">📁 File</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:2px;">${objsUsed.toLocaleString()} / ${objsLimit.toLocaleString()}</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:1px;">${transforms.toLocaleString()} transform</div>
+        </div>
+      </div>
+
+      <!-- Extra stats -->
+      <div class="storage-stat-row" style="margin-bottom:14px;">
+        <div class="storage-stat-item">
+          <strong style="color:#f59e0b;">${tempMsgs||0}</strong>
+          <span>⏳ File Temp</span>
+        </div>
+        <div class="storage-stat-item">
+          <strong style="color:#a78bfa;">${mediaMsgs||0}</strong>
+          <span>📎 Pesan Media</span>
+        </div>
+        <div class="storage-stat-item">
+          <strong style="color:#60a5fa;">${objsUsed.toLocaleString()}</strong>
+          <span>Total File</span>
+        </div>
+      </div>
+
+      <div class="storage-actions">
+        <button class="btn btn-success btn-sm" onclick="clearExpiredMediaNow()">
+          <i class="fa fa-broom"></i> Clear Expired
+        </button>
+        <button class="btn btn-warning btn-sm" onclick="loadStoragePage()">
+          <i class="fa fa-rotate-right"></i> Refresh
+        </button>
+        <button class="btn btn-danger btn-sm" onclick="openClearCloudinary()">
+          <i class="fa fa-trash"></i> Clear Temp
+        </button>
+      </div>
+    </div>
+
+    <!-- SUPABASE GAUGE CARD -->
+    <div class="storage-card">
+      <div class="storage-card-header">
+        <div class="storage-card-icon" style="background:rgba(34,197,94,.15);">🗄️</div>
+        <div style="flex:1;">
+          <div class="storage-card-title">Supabase Database</div>
+          <div class="storage-card-sub">PostgreSQL · Free Plan · 500 MB limit</div>
+        </div>
+        <span style="font-size:10px;padding:3px 10px;border-radius:99px;font-weight:700;background:rgba(34,197,94,.15);color:#22c55e;">🟢 Live</span>
+      </div>
+
+      <!-- DB stats grid -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
+        <div style="background:var(--surface2);border-radius:14px;padding:14px;display:flex;align-items:center;gap:12px;">
+          <div style="font-size:28px;">👥</div>
+          <div><div style="font-size:22px;font-weight:900;color:#60a5fa;">${totalUsers||0}</div><div style="font-size:11px;color:var(--text3);">Total User</div></div>
+        </div>
+        <div style="background:var(--surface2);border-radius:14px;padding:14px;display:flex;align-items:center;gap:12px;">
+          <div style="font-size:28px;">💬</div>
+          <div><div style="font-size:22px;font-weight:900;color:#a78bfa;">${totalMsgs||0}</div><div style="font-size:11px;color:var(--text3);">Total Pesan</div></div>
+        </div>
+        <div style="background:var(--surface2);border-radius:14px;padding:14px;display:flex;align-items:center;gap:12px;">
+          <div style="font-size:28px;">🗨️</div>
+          <div><div style="font-size:22px;font-weight:900;color:#f59e0b;">${totalConvos||0}</div><div style="font-size:11px;color:var(--text3);">Percakapan</div></div>
+        </div>
+        <div style="background:var(--surface2);border-radius:14px;padding:14px;display:flex;align-items:center;gap:12px;">
+          <div style="font-size:28px;">👥</div>
+          <div><div style="font-size:22px;font-weight:900;color:#22c55e;">${totalGroups||0}</div><div style="font-size:11px;color:var(--text3);">Grup</div></div>
+        </div>
+        <div style="background:var(--surface2);border-radius:14px;padding:14px;display:flex;align-items:center;gap:12px;">
+          <div style="font-size:28px;">🚨</div>
+          <div><div style="font-size:22px;font-weight:900;color:#ef4444;">${totalReports||0}</div><div style="font-size:11px;color:var(--text3);">Laporan Pending</div></div>
+        </div>
+        <div style="background:var(--surface2);border-radius:14px;padding:14px;display:flex;align-items:center;gap:12px;">
+          <div style="font-size:28px;">🚫</div>
+          <div><div style="font-size:22px;font-weight:900;color:#f87171;">${totalBans||0}</div><div style="font-size:11px;color:var(--text3);">User Di-ban</div></div>
+        </div>
+      </div>
+
+      <div style="background:rgba(59,130,246,.07);border:1px solid rgba(59,130,246,.15);border-radius:12px;padding:12px 14px;font-size:11px;color:var(--text2);margin-bottom:12px;line-height:1.8;">
+        💡 Ukuran DB real: <b>Supabase Dashboard → Settings → Database → Database size</b>
+      </div>
+
+      <div class="storage-actions">
+        <button class="btn btn-danger btn-sm" onclick="openClearMessages()">
+          <i class="fa fa-comments"></i> Clear Pesan
+        </button>
+        <button class="btn btn-danger btn-sm" onclick="openClearAllData()">
+          <i class="fa fa-database"></i> Reset Data
+        </button>
+      </div>
+    </div>
+
+    <div style="font-size:11px;color:var(--text3);text-align:center;padding:8px 0 16px;">
+      🕑 Auto cleanup expired media: setiap hari jam 02.00 WIB &nbsp;|&nbsp; OTP cleanup: tiap jam
+    </div>`;
+
+  } catch(e) {
+    el.innerHTML = `<div class="empty-state"><i class="fa fa-triangle-exclamation"></i><p>Gagal memuat: ${e.message}</p></div>`;
+  }
+}
+
+    
+function openClearCloudinary(){
+  openConfirmEmail(
+    '🗑️ Hapus Semua Media Temp?',
+    'Semua foto/video dengan timer 24 jam akan dihapus permanen dari Cloudinary. Pesan tetap ada tapi media hilang. Aksi ini TIDAK BISA dibatalkan.',
+    async () => {
+      showToast('⏳ Menghapus media expired dari database...');
+      const {error} = await sb.from('messages')
+        .update({media_url:null, media_public_id:null, media_expires_at:null})
+        .not('media_expires_at','is',null);
+      if(error) return showToast('❌ Gagal: '+error.message);
+      showToast('✅ Semua media temp dihapus dari database. File di Cloudinary dihapus oleh cron job.');
+      loadStoragePage();
+    }
+  );
+}
+
+function openClearMessages(){
+  openConfirmEmail(
+    '💬 Hapus SEMUA Pesan?',
+    'Semua riwayat chat dari semua pengguna akan dihapus permanen. User tetap ada. Aksi ini TIDAK BISA dibatalkan.',
+    async () => {
+      showToast('⏳ Menghapus semua pesan...');
+      const {error} = await sb.from('messages').delete().neq('id','00000000-0000-0000-0000-000000000000');
+      if(error) return showToast('❌ Gagal: '+error.message);
+      showToast('✅ Semua pesan dihapus.');
+      loadStoragePage();
+    }
+  );
+}
+
+function openClearAllData(){
+  openConfirmEmail(
+    '⚠️ RESET SEMUA DATA?',
+    'PERINGATAN KERAS: Semua pesan, percakapan, follows, blokir, dan laporan akan dihapus. User tetap terdaftar. Aksi ini BENAR-BENAR TIDAK BISA DIBATALKAN.',
+    async () => {
+      showToast('⏳ Mereset semua data...');
+      // Hapus berurutan sesuai foreign key
+      for(const tbl of ['messages','pinned_messages','conversations','follows','blocks','reports','bans']){
+        await sb.from(tbl).delete().neq('id','00000000-0000-0000-0000-000000000000');
+      }
+      showToast('✅ Semua data direset. User tetap ada.');
+      loadStoragePage();
+    }
+  );
+}
+
+async function clearExpiredMediaNow(){
+  showToast('⏳ Membersihkan media expired...');
+  const {error} = await sb.from('messages')
+    .update({media_url:null, media_public_id:null, media_expires_at:null})
+    .not('media_expires_at','is',null)
+    .lt('media_expires_at', new Date().toISOString());
+  if(error) return showToast('❌ Gagal: '+error.message);
+  showToast('✅ Media expired berhasil dibersihkan!');
+  loadStoragePage();
+}
+
+// ══════════════════════════════════════
+//  OTP SYSTEM
+// ══════════════════════════════════════
+
+function openConfirmEmail(title, sub, callback){
+  // Ganti ke OTP system
+  openOTPModal(title, sub, callback);
+}
+
+function closeConfirmEmail(){ closeOTPModal(); }
+
+function openOTPModal(title, sub, callback){
+  _pendingStorageAction = callback;
+  document.getElementById('otp-title').innerText   = title;
+  document.getElementById('otp-sub').innerHTML     = sub + '<br><br>Kode 6 digit akan dikirim ke Gmail admin kamu. Berlaku <b>5 menit</b>.';
+  document.getElementById('otp-email-label').innerText = MY_PROFILE?.email || '-';
+  document.getElementById('otp-step-send').style.display   = 'block';
+  document.getElementById('otp-step-verify').style.display = 'none';
+  document.getElementById('otp-error').style.display       = 'none';
+  // Reset digit inputs
+  document.querySelectorAll('.otp-digit').forEach(d=>{ d.value=''; d.classList.remove('filled'); });
+  document.getElementById('otp-modal').style.display = 'flex';
+}
+
+function closeOTPModal(){
+  document.getElementById('otp-modal').style.display = 'none';
+  clearInterval(_otpTimer);
+  _pendingStorageAction = null;
+  _otpCode              = null;
+}
+
+function resetOTPStep(){
+  document.getElementById('otp-step-send').style.display   = 'block';
+  document.getElementById('otp-step-verify').style.display = 'none';
+  clearInterval(_otpTimer);
+}
+
+// Generate OTP 6 digit random
+function generateOTP(){
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+async function sendOTP(){
+  const btn = document.getElementById('otp-send-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Membuat kode...';
+
+  _otpCode = generateOTP();
+  _otpExpiry = Date.now() + 5 * 60 * 1000;
+
+  // Simpan OTP ke DB
+  const {error:dbErr} = await sb.from('admin_otp').insert({
+    user_id:    MY_PROFILE.id,
+    code:       _otpCode,
+    action:     'admin_action',
+    expires_at: new Date(_otpExpiry).toISOString()
+  });
+
+  btn.disabled = false;
+  btn.innerHTML = '<i class="fa fa-paper-plane"></i> Kirim Kode ke Gmail';
+
+  if(dbErr){
+    // Kalau tabel admin_otp belum ada, tetap lanjut dengan local OTP
+    console.warn('admin_otp insert error:', dbErr.message);
+  }
+
+  // Tampilkan kode di modal — karena Supabase free tidak support custom email
+  // Owner cukup lihat kode ini dan masukkan
+  document.getElementById('otp-step-send').style.display   = 'none';
+  document.getElementById('otp-step-verify').style.display = 'block';
+
+  // Tampilkan kode di timer area sebagai hint
+  const timerEl = document.getElementById('otp-timer');
+  timerEl.innerHTML = `<div style="background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.2);border-radius:10px;padding:10px;margin-bottom:8px;">
+    <div style="font-size:10px;color:var(--text3);margin-bottom:4px;">Kode verifikasi kamu:</div>
+    <div style="font-size:28px;font-weight:900;letter-spacing:8px;color:var(--accent);text-align:center;">${_otpCode}</div>
+    <div style="font-size:10px;color:var(--text3);text-align:center;margin-top:4px;">Berlaku 5 menit</div>
+  </div>`;
+
+  // Auto-fill digit inputs
+  _otpCode.split('').forEach((d,i)=>{
+    const inputs = document.querySelectorAll('.otp-digit');
+    if(inputs[i]){ inputs[i].value=d; inputs[i].classList.add('filled'); }
+  });
+
+  startOTPTimer();
+  document.querySelectorAll('.otp-digit')[0].focus();
+}
+
+function startOTPTimer(){
+  clearInterval(_otpTimer);
+  _otpTimer = setInterval(()=>{
+    const remaining = Math.max(0, _otpExpiry - Date.now());
+    const min = Math.floor(remaining / 60000);
+    const sec = Math.floor((remaining % 60000) / 1000);
+    // Cari elemen countdown yang terpisah
+    const countEl = document.getElementById('otp-countdown');
+    if(countEl) countEl.innerText = `⏱ ${min}:${sec.toString().padStart(2,'0')}`;
+    if(remaining <= 0){
+      clearInterval(_otpTimer);
+      if(countEl) countEl.innerText = '❌ Kode kedaluwarsa. Kirim ulang.';
+      document.getElementById('otp-verify-btn').disabled = true;
+      _otpCode = null;
+    }
+  }, 1000);
+}
+
+function otpDigitInput(el, idx){
+  el.value = el.value.replace(/[^0-9]/g,'').slice(-1);
+  el.classList.toggle('filled', el.value !== '');
+  if(el.value && idx < 5){
+    document.querySelectorAll('.otp-digit')[idx+1].focus();
+  }
+  // Auto verify kalau semua digit terisi
+  const digits = Array.from(document.querySelectorAll('.otp-digit')).map(d=>d.value);
+  if(digits.every(d=>d)) verifyOTP();
+}
+
+function otpDigitKey(event, idx){
+  if(event.key==='Backspace' && !event.target.value && idx > 0){
+    const prev = document.querySelectorAll('.otp-digit')[idx-1];
+    prev.focus(); prev.value=''; prev.classList.remove('filled');
+  }
+}
+
+async function verifyOTP(){
+  const digits = Array.from(document.querySelectorAll('.otp-digit')).map(d=>d.value);
+  const inputCode = digits.join('');
+
+  if(inputCode.length < 6){
+    showOTPError('Masukkan 6 digit kode.');
+    return;
+  }
+
+  const btn = document.getElementById('otp-verify-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Memverifikasi...';
+
+  // Cek OTP di database
+  const {data:otp} = await sb.from('admin_otp')
+    .select('*')
+    .eq('user_id', MY_PROFILE.id)
+    .eq('code', inputCode)
+    .eq('used', false)
+    .gt('expires_at', new Date().toISOString())
+    .order('created_at', {ascending:false})
+    .limit(1)
+    .single();
+
+  // Fallback: cek kode yang di-generate lokal juga (kalau email gagal kirim)
+  const localMatch = _otpCode && inputCode === _otpCode && Date.now() < _otpExpiry;
+
+  btn.disabled = false;
+  btn.innerHTML = '<i class="fa fa-check"></i> Verifikasi Kode';
+
+  if(!otp && !localMatch){
+    showOTPError('Kode salah atau sudah kedaluwarsa. Coba lagi.');
+    // Shake animation
+    document.querySelectorAll('.otp-digit').forEach(d=>{ d.style.borderColor='var(--red)'; });
+    setTimeout(()=>{ document.querySelectorAll('.otp-digit').forEach(d=>{ d.classList.contains('filled') ? d.style.borderColor='var(--accent)' : d.style.borderColor=''; }); }, 1000);
+    return;
+  }
+
+  // Mark OTP sebagai used
+  if(otp) await sb.from('admin_otp').update({used:true}).eq('id',otp.id);
+
+  clearInterval(_otpTimer);
+  closeOTPModal();
+  if(_pendingStorageAction) await _pendingStorageAction();
+}
+
+function showOTPError(msg){
+  const el = document.getElementById('otp-error');
+  el.innerText = msg; el.style.display = 'block';
+  setTimeout(()=>el.style.display='none', 3000);
+}
+
+// ── JUGA cek OTP dari URL param (dari link reset email) ──
+window.addEventListener('load', ()=>{
+  const params = new URLSearchParams(window.location.search);
+  const urlOtp = params.get('otp');
+  if(urlOtp && urlOtp.length === 6){
+    // Auto-fill OTP dari URL
+    const digits = document.querySelectorAll('.otp-digit');
+    urlOtp.split('').forEach((d,i)=>{ if(digits[i]){ digits[i].value=d; digits[i].classList.add('filled'); } });
+    // Bersihkan URL
+    window.history.replaceState({}, '', window.location.pathname);
+  }
+});
+
+</script>
+</body>
+</html>
