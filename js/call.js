@@ -37,25 +37,68 @@ let _remoteSet      = false;    // flag apakah remoteDescription sudah di-set
 function makeRoomId(a,b){ return [a,b].sort().join('_'); }
 
 // ── Hard reset semua state ──────────────────────────────
-function resetCallState(){
+async function resetCallState(){
+  // 1. Hapus sinyal lama dari DB supaya tidak nyangkut
+  if(callRoomId){
+    try {
+      await sb.from('call_signals')
+        .delete()
+        .eq('room_id', callRoomId);
+    } catch(e){ console.warn('[reset] cleanup signals:', e.message); }
+  }
+
+  // 2. Tutup peer connection
   if(pc){ try{pc.close();}catch(e){} pc=null; }
+
+  // 3. Stop local stream
   if(localStream){ localStream.getTracks().forEach(t=>t.stop()); localStream=null; }
+
+  // 4. Remove semua channel
   if(callSignalCh){ try{sb.removeChannel(callSignalCh);}catch(e){} callSignalCh=null; }
   if(_waitOfferCh){ try{sb.removeChannel(_waitOfferCh);}catch(e){} _waitOfferCh=null; }
-  clearInterval(callTimer); callTimer=null;
-  clearTimeout(_callTimeout); _callTimeout=null;
+
+  // 5. Clear semua timer
+  clearInterval(callTimer);    callTimer=null;
+  clearTimeout(_callTimeout);  _callTimeout=null;
   clearInterval(_vibrateLoop); _vibrateLoop=null;
+
+  // 6. Stop ringtone & vibrate
   stopRingtone();
   if(navigator.vibrate) navigator.vibrate(0);
   if(window._callNotif){ window._callNotif.close(); window._callNotif=null; }
+
+  // 7. Reset audio
   const audio = document.getElementById('remote-audio');
-  if(audio) audio.srcObject=null;
+  if(audio){ audio.srcObject=null; audio.muted=false; }
+
+  // 8. Hide UI
   document.getElementById('call-overlay')?.classList.remove('active');
   document.getElementById('incoming-call')?.classList.remove('show');
-  isCallActive=false; callSeconds=0; isMuted=false;
-  callRoomId=null; callPartnerId=null;
-  _incomingOffer=null; _incomingFrom=null;
-  _historyId=null; _iceQueue=[]; _remoteSet=false;
+
+  // 9. Reset tombol mute/speaker ke default
+  const btnMute = document.getElementById('btn-mute');
+  if(btnMute){
+    btnMute.classList.remove('active');
+    const circle = btnMute.querySelector('.call-btn-circle');
+    if(circle) circle.innerHTML = '<i class="fa fa-microphone" style="color:#fff;"></i>';
+  }
+  const btnSpk = document.getElementById('btn-speaker');
+  if(btnSpk){
+    const circle = btnSpk.querySelector('.call-btn-circle');
+    if(circle) circle.innerHTML = '<i class="fa fa-volume-high" style="color:#fff;"></i>';
+  }
+
+  // 10. Reset semua variabel state
+  isCallActive   = false;
+  callSeconds    = 0;
+  isMuted        = false;
+  callRoomId     = null;
+  callPartnerId  = null;
+  _incomingOffer = null;
+  _incomingFrom  = null;
+  _historyId     = null;
+  _iceQueue      = [];
+  _remoteSet     = false;
 }
 
 // ── Anti-spam ───────────────────────────────────────────
@@ -136,7 +179,7 @@ async function startCall(){
   if(isCallActive){ showToast('Sudah ada panggilan aktif.'); return; }
   if(!canCallNow(activePartner.id)) return;
 
-  resetCallState();
+  await resetCallState();
 
   try {
     localStream = await navigator.mediaDevices.getUserMedia({
@@ -182,15 +225,15 @@ async function startCall(){
     await sendSignal('offer',{sdp:{type:offer.type,sdp:offer.sdp}}, callPartnerId);
   } catch(e){
     showToast('❌ Gagal buat offer: '+e.message);
-    resetCallState(); return;
+    await resetCallState(); return;
   }
 
   // Timeout 45 detik
-  _callTimeout = setTimeout(()=>{
+  _callTimeout = setTimeout(async ()=>{
     if(isCallActive && callSeconds===0){
       showToast('📵 Tidak ada jawaban.');
       if(_historyId) sb.from('call_history').update({status:'missed',ended_at:new Date().toISOString()}).eq('id',_historyId).catch(()=>{});
-      resetCallState();
+      await resetCallState();
     }
   }, 45000);
 }
@@ -205,7 +248,7 @@ async function acceptCall(){
 
   if(!_incomingOffer||!_incomingFrom){
     showToast('❌ Sesi panggilan tidak valid.');
-    resetCallState(); return;
+    await resetCallState(); return;
   }
 
   try {
@@ -216,7 +259,7 @@ async function acceptCall(){
   } catch(e){
     showToast('❌ Mikrofon tidak bisa diakses: '+e.message);
     await sendSignal('reject',{reason:'no_mic'},_incomingFrom);
-    resetCallState(); return;
+    await resetCallState(); return;
   }
 
   callPartnerId = _incomingFrom;
@@ -247,7 +290,7 @@ async function acceptCall(){
   } catch(e){
     showToast('❌ Gagal menyambung: '+e.message);
     console.error('[acceptCall]', e);
-    resetCallState(); return;
+    await resetCallState(); return;
   }
 
   _incomingOffer=null; _incomingFrom=null;
@@ -263,7 +306,7 @@ async function rejectCall(){
         .is('ended_at',null);
     } catch(e){}
   }
-  resetCallState();
+  await resetCallState();
 }
 
 async function endCall(){
@@ -277,7 +320,7 @@ async function endCall(){
       }).eq('id',_historyId);
     } catch(e){}
   }
-  resetCallState();
+  await resetCallState();
 }
 
 function markCallAnswered(){
@@ -382,7 +425,7 @@ function subscribeCallSignals(roomId){
           case 'reject':
             showToast('❌ Panggilan ditolak.');
             if(_historyId) sb.from('call_history').update({status:'rejected',ended_at:new Date().toISOString()}).eq('id',_historyId).catch(()=>{});
-            resetCallState();
+            await resetCallState();
             break;
 
           case 'end':
