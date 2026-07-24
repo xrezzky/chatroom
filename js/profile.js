@@ -1,6 +1,57 @@
 // XREZZKY Chat — profile.js
 // Generated: split from monolithic index.html
-// DO NOT edit manually — use the full project structure
+
+// ════════════════════════════════
+//  UPDATE SIDEBAR UI
+// ════════════════════════════════
+async function updateSidebarUI(){
+  if(!MY_PROFILE) return;
+  myRole = MY_PROFILE.role || 'user';
+
+  const photoUrl = MY_PROFILE.avatar_url || avatarUrl(MY_PROFILE.username);
+
+  // Sidebar avatar
+  const sbAvatar = document.getElementById('sb-avatar');
+  const sbIcon   = document.getElementById('sb-avatar-icon');
+  if(sbAvatar){ sbAvatar.src = photoUrl; sbAvatar.style.display = 'block'; }
+  if(sbIcon)  sbIcon.style.display = 'none';
+
+  // Profile drawer
+  const pdAvatar = document.getElementById('pd-avatar');
+  if(pdAvatar) pdAvatar.src = photoUrl;
+  const pdName = document.getElementById('pd-name');
+  if(pdName) pdName.innerText = MY_PROFILE.username;
+  const pdEmail = document.getElementById('pd-email');
+  if(pdEmail) pdEmail.innerText = ME?.email || '';
+  const pdUsernameSub = document.getElementById('pd-username-sub');
+  if(pdUsernameSub) pdUsernameSub.innerText = '@' + MY_PROFILE.username;
+  const pdBioSub = document.getElementById('pd-bio-sub');
+  if(pdBioSub) pdBioSub.innerText = MY_PROFILE.bio || 'Tambahkan bio singkat';
+  const pdBioText = document.getElementById('pd-bio-text');
+  if(pdBioText) pdBioText.innerText = MY_PROFILE.bio || 'Belum ada bio';
+
+  // Role badge
+  const roleEl = document.getElementById('pd-role-badge');
+  if(roleEl) roleEl.innerHTML = getRoleBadgeHTML(myRole);
+
+  // Tombol admin — tampilkan kalau owner/admin
+  const adminBtn = document.getElementById('admin-panel-btn');
+  if(adminBtn){
+    adminBtn.style.display = (myRole==='owner'||myRole==='admin') ? 'flex' : 'none';
+  }
+
+  // Stats follow
+  try {
+    const [{count:flwing},{count:flwrs}] = await Promise.all([
+      sb.from('follows').select('*',{count:'exact',head:true}).eq('sender_id',ME.id).eq('status','accepted'),
+      sb.from('follows').select('*',{count:'exact',head:true}).eq('receiver_id',ME.id).eq('status','accepted'),
+    ]);
+    const pdFollowing = document.getElementById('pd-following');
+    const pdFollowers = document.getElementById('pd-followers');
+    if(pdFollowing) pdFollowing.innerText = flwing||0;
+    if(pdFollowers) pdFollowers.innerText = flwrs||0;
+  } catch(e){}
+}
 
 // ════════════════════════════════
 //  EDIT PROFIL
