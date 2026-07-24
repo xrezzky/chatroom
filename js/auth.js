@@ -407,14 +407,6 @@ async function doForgot() {
   }, 1000);
 }
 
-async function loadMyProfile() {
-  if (!ME) return;
-  const { data, error } = await sb.from('users').select('*').eq('id', ME.id).single();
-  if (error || !data) return;
-  MY_PROFILE = data;
-  myRole = data.role || 'user';
-  await updateSidebarUI();
-}
 
 async function doLogout() {
   _intentionalLogout = true;
