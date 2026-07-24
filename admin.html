@@ -905,7 +905,6 @@ async function loadAdminProfile() {
     const { data, error } = await sb.from('users').select('*').eq('id', ME.id).single();
 
     if (error || !data) {
-      // User tidak ada di tabel — bukan admin
       await sb.auth.signOut();
       showLogin();
       showError('Akun tidak ditemukan. Daftar dulu di app chat.');
@@ -920,20 +919,25 @@ async function loadAdminProfile() {
     }
 
     MY_PROFILE = data;
-    document.getElementById('admin-avatar').src = data.avatar_url ||
+    const avatarSrc = data.avatar_url ||
       `https://ui-avatars.com/api/?name=${encodeURIComponent(data.username)}&background=1e3a5f&color=60a5fa&bold=true`;
+    document.getElementById('admin-avatar').src = avatarSrc;
     document.getElementById('admin-username').innerText = '@' + data.username;
     const roleEl = document.getElementById('admin-role-text');
-    roleEl.innerText   = data.role === 'owner' ? '👑 Owner' : '🛡️ Admin';
-    roleEl.className   = 'admin-info-role ' + data.role;
-    document.getElementById('dash-greeting').innerText = `Halo, ${data.username}! Semua aman ✅`;
+    if (roleEl) {
+      roleEl.innerText   = data.role === 'owner' ? '👑 Owner' : '🛡️ Admin';
+      roleEl.className   = 'admin-info-role ' + data.role;
+    }
+    const greetEl = document.getElementById('dash-greeting');
+    if (greetEl) greetEl.innerText = `Halo, ${data.username}! Semua aman ✅`;
+
     showApp();
     initAdmin();
 
   } catch(e) {
-    console.error('loadAdminProfile error:', e);
+    console.error('loadAdminProfile:', e);
     showLogin();
-    showError('Gagal verifikasi akun: ' + e.message);
+    showError('Gagal verifikasi akun. Coba login ulang.');
   }
 }
 
@@ -1076,13 +1080,22 @@ function goToChat() {
 // ══════════════════════════════════════
 //  INIT
 // ══════════════════════════════════════
+let _adminRtCh = null;
+
 function initAdmin() {
   refreshDashboard();
   subscribeRealtime();
 }
 
 function subscribeRealtime() {
-  sb.channel('admin-rt')
+  // Cleanup channel lama dulu biar tidak crash
+  if (_adminRtCh) {
+    try { sb.removeChannel(_adminRtCh); } catch(e) {}
+    _adminRtCh = null;
+  }
+
+  // Buat channel baru dengan nama unik per sesi
+  _adminRtCh = sb.channel('admin-rt-' + Date.now())
     .on('postgres_changes',{event:'INSERT',schema:'public',table:'reports'},()=>{
       refreshReportsBadge();
       if(document.getElementById('page-reports').classList.contains('active')) loadReports();
@@ -1093,7 +1106,11 @@ function subscribeRealtime() {
     .on('postgres_changes',{event:'*',schema:'public',table:'bans'},()=>{
       if(document.getElementById('page-bans').classList.contains('active')) loadBans();
     })
-    .subscribe();
+    .subscribe((status) => {
+      if (status === 'SUBSCRIBED') {
+        console.log('[Admin] Realtime connected ✅');
+      }
+    });
 }
 
 // ══════════════════════════════════════
