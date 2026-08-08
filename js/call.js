@@ -313,6 +313,10 @@ function _subscribeCallSignals(roomId, sessionId){
       async payload => {
         const sig = payload.new;
 
+        // Freshness check — ignore signal > 30 detik
+        const age = Date.now() - new Date(sig.created_at).getTime();
+        if(age > 30000){ callLog('stale signal dropped:', sig.type, age+'ms'); return; }
+
         // Guard: hanya proses signal untuk sesi ini
         if(sig.room_id !== roomId)         { return; }
         if(sig.from_id === ME.id)          { return; } // dari diri sendiri
@@ -476,8 +480,16 @@ async function acceptCall(){
   if(window._callNotif){ window._callNotif.close(); window._callNotif=null; }
   document.getElementById('incoming-call')?.classList.remove('show');
 
-  if(!_local.incomingOffer||!_local.incomingFrom){
-    showToast('❌ Sesi panggilan tidak valid.');
+  if(!_local.incomingOffer || !_local.incomingFrom || !_session.id){
+    callLog('acceptCall invalid — offer:', !!_local.incomingOffer, 'from:', !!_local.incomingFrom, 'session:', !!_session.id);
+    showToast('❌ Sesi panggilan tidak valid. Tunggu panggilan masuk.');
+    forceEndLocal(); return;
+  }
+
+  // Cek freshness — offer tidak boleh lebih dari 45 detik
+  if(_session.startedAt && Date.now()-_session.startedAt > 45000){
+    callLog('acceptCall — session too old, rejecting');
+    showToast('❌ Sesi panggilan sudah kadaluarsa.');
     forceEndLocal(); return;
   }
 
@@ -610,7 +622,15 @@ function subscribeIncomingCalls(){
       async payload => {
         const sig = payload.new;
         if(sig.to_id!==ME.id || sig.type!=='call') return;
-        callLog('incoming call from:', sig.from_id?.slice(0,8), 'session:', sig.payload?.sessionId);
+
+        // ── FRESHNESS CHECK — tolak signal yang lebih dari 15 detik ──
+        const signalAge = Date.now() - new Date(sig.created_at).getTime();
+        if(signalAge > 15000){
+          callLog('stale signal ignored, age:', signalAge+'ms');
+          return;
+        }
+
+        callLog('incoming call from:', sig.from_id?.slice(0,8), 'age:', signalAge+'ms');
 
         // Busy → tolak otomatis
         if(_local.isActive){
